@@ -1,15 +1,14 @@
 #include <iostream>
 #include <cstdlib>
 #include "src/menu/menu.h"
+#include "src/utils/screen/screen.h"
 
 using namespace std;
 
 // ================= MAIN FUNCTION =================
 int main()
 {
-  cout << "╔════════════════════════════════════════╗\n";
-  cout << "║     REAL ESTATE MANAGEMENT SYSTEM      ║\n";
-  cout << "╚════════════════════════════════════════╝\n";
+  Screen::printHeader("REAL ESTATE MANAGEMENT SYSTEM");
 
   Menu::menu();
 

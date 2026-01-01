@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <string>
 #include "admin.h"
+#include "../utils/screen/screen.h"
 
 using namespace std;
 

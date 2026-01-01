@@ -2,7 +2,11 @@
 #include <cstdlib>
 #include <stdio.h>
 #include "../admin/admin.h"
+#include "../property/property.h"
+#include "../utils/screen/screen.h"
 #include "menu.h"
+
+using namespace std;
 
 namespace Menu
 {
@@ -14,32 +18,36 @@ namespace Menu
         // Login validation
         while (!admin.login())
         {
-            std::cout << "Invalid login! Try again.\n";
+            cout << "Invalid login! Try again.\n";
         }
 
-        std::cout << "Login successful!\n";
+        cout << "Login successful!\n";
+
+        Screen::clearScreen();
 
         do
         {
-            std::cout << "\n----- MAIN MENU -----\n";
-            std::cout << "1. Property Menu\n";
-            std::cout << "2. Seller Menu\n";
-            std::cout << "3. Client Menu\n";
-            std::cout << "4. Logout\n";
-            std::cout << "Enter choice: ";
-            std::cin >> choice;
+            cout << "\n----- MAIN MENU -----\n";
+            cout << "1. Property Menu\n";
+            cout << "2. Seller Menu\n";
+            cout << "3. Client Menu\n";
+            cout << "4. Logout\n";
+            cout << "Enter choice: ";
+            cin >> choice;
 
             // User *user; // Base class pointer (Polymorphism)
 
             switch (choice)
             {
-            // case 1:
-            // {
-            //     Property p;
-            //     user = &p;
-            //     user->menu();
-            //     break;
-            // }
+            case 1:
+            {
+                cout << "Entering Property menu...\n";
+                // Screen::clearScreen();
+                Property p;
+                p.menu();
+                cout << "Exited Property menu.\n";
+                break;
+            }
             // Disable for now
             //  case 2:
             //  {
@@ -56,14 +64,13 @@ namespace Menu
             //      break;
             //  }
             case 4:
-                std::cout << "Logged out successfully.\n";
-                std::cout << "Program ended.\n";
+                cout << "Logged out successfully.\n";
+                cout << "Program ended.\n";
                 return 0;
 
             default:
-                std::cout << "Invalid choice!\n";
+                cout << "Invalid choice!\n";
             }
-
         } while (true);
     }
 }
