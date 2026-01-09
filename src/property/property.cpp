@@ -150,12 +150,168 @@ void Property::addProperty()
     cout << "Property added successfully!\n";
 }
 
+void Property::deletePropertyById(int id)
+{
+    FILE *file = fopen(this->fileName, "r");
+    FILE *temp = fopen("temp.txt", "w");
+
+    if (file == nullptr || temp == nullptr)
+    {
+        cerr << "Error opening file.\n";
+        if (file) fclose(file);
+        if (temp) fclose(temp);
+        return;
+    }
+
+    PropertyDetails property;
+    bool found = false;
+
+    while (fscanf(file, "%d %s %s %f %d %s",
+                  &property.id,
+                  property.type,
+                  property.location,
+                  &property.price,
+                  &property.size,
+                  property.status) == 6)
+    {
+        if (property.id == id)
+        {
+            found = true;
+            continue;
+        }
+        fprintf(temp, "%d %s %s %.2f %d %s\n",
+                property.id,
+                property.type,
+                property.location,
+                property.price,
+                property.size,
+                property.status);
+    }
+
+    fclose(file);
+    fclose(temp);
+
+    remove(this->fileName);
+    rename("temp.txt", this->fileName);
+
+    if (found)
+    {
+        cout << "Property deleted successfully!\n";
+    }
+    else
+    {
+        cout << "Property ID not found!\n";
+    }
+    cout << "Press Enter to continue...";
+    cin.ignore();
+    cin.get();
+}
+
+void Property::updatePropertyById(int id)
+{
+    FILE *file = fopen(this->fileName, "r");
+    FILE *temp = fopen("temp.txt", "w");
+
+    if (file == nullptr || temp == nullptr)
+    {
+        cerr << "Error opening file.\n";
+        if (file) fclose(file);
+        if (temp) fclose(temp);
+        return;
+    }
+
+    PropertyDetails property;
+    bool found = false;
+
+    while (fscanf(file, "%d %s %s %f %d %s",
+                  &property.id,
+                  property.type,
+                  property.location,
+                  &property.price,
+                  &property.size,
+                  property.status) == 6)
+    {
+        if (property.id == id)
+        {
+            found = true;
+            cout << "Enter New Property Type (Current: " << property.type << "): ";
+            cin >> property.type;
+            cout << "Enter New Location (Current: " << property.location << "): ";
+            cin >> property.location;
+            cout << "Enter New Price (Current: " << property.price << "): ";
+            cin >> property.price;
+            cout << "Enter New Size (Current: " << property.size << "): ";
+            cin >> property.size;
+            // Status kept as Available as per Add logic
+            strcpy(property.status, "Available");
+        }
+        fprintf(temp, "%d %s %s %.2f %d %s\n",
+                property.id,
+                property.type,
+                property.location,
+                property.price,
+                property.size,
+                property.status);
+    }
+
+    fclose(file);
+    fclose(temp);
+
+    remove(this->fileName);
+    rename("temp.txt", this->fileName);
+
+    if (found)
+    {
+        cout << "Property updated successfully!\n";
+    }
+    else
+    {
+        cout << "Property ID not found!\n";
+    }
+    cout << "Press Enter to continue...";
+    cin.ignore();
+    cin.get();
+}
+
 void Property::viewProperties()
 {
-    Screen::clearScreen();
-    Screen::printHeader("View Properties");
+    int choice;
+    do
+    {
+        Screen::clearScreen();
+        Screen::printHeader("View Properties");
 
-    this->readPropertiesFromFile(nullptr);
+        this->readPropertiesFromFile(nullptr);
+
+        cout << "\nChoose an option:\n";
+        cout << "1. Delete Property by ID\n";
+        cout << "2. Update Property details\n";
+        cout << "3. Back to Property Menu\n";
+        cout << "Enter choice: ";
+        cin >> choice;
+
+        if (choice == 3) break;
+
+        int id;
+        switch (choice)
+        {
+        case 1:
+            cout << "Enter Property ID to delete: ";
+            cin >> id;
+            this->deletePropertyById(id);
+            break;
+        case 2:
+            cout << "Enter Property ID to update: ";
+            cin >> id;
+            this->updatePropertyById(id);
+            break;
+        default:
+            cout << "Invalid choice!\n";
+            cin.ignore();
+            cin.get();
+            break;
+        }
+    } while (true);
 }
 
 void Property::menu()
