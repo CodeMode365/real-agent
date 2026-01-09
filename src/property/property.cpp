@@ -12,7 +12,7 @@ using namespace std;
 Property::Property()
     : properties() // Initialize properties in the initializer list
 {
-    strcpy(this->fileName, "property.txt");
+    strcpy(this->fileName, this->fileName);
 }
 
 void Property::readPropertiesFromFile(const char *searchTerm)
@@ -26,8 +26,9 @@ void Property::readPropertiesFromFile(const char *searchTerm)
         return;
     }
 
-    cout << "ID\tType\tLocation\tPrice\tSize\tStatus\n";
-    cout << "-------------------------------------------------------------------------------\n";
+    cout << "\n┌─────┬──────────────┬──────────────┬───────────────┬──────────┬─────────────┐\n";
+    cout << "│ ID  │     Type     │   Location   │     Price     │   Size   │    Status   │\n";
+    cout << "├─────┼──────────────┼──────────────┼───────────────┼──────────┼─────────────┤\n";
     while (fscanf(file, "%d %s %s %f %d %s",
                   &property.id,
                   property.type,
@@ -36,16 +37,27 @@ void Property::readPropertiesFromFile(const char *searchTerm)
                   &property.size,
                   property.status) == 6)
     {
-        if (searchTerm == nullptr || string(searchTerm).empty() || string(property.location) == searchTerm)
+        if ((searchTerm == nullptr || string(searchTerm).empty() || string(property.location) == searchTerm) && string(property.status) == "Available")
         {
-            cout << property.id << "\t"
-                 << property.type << "\t"
-                 << property.location << "\t"
-                 << property.price << "\t"
-                 << property.size << "\t"
-                 << property.status << "\n";
+            printf("│ %-3d │ %-12s │ %-12s │ Rs. %-9.1f │ %-8d │ %-11s │\n",
+                   property.id,
+                   property.type,
+                   property.location,
+                   property.price,
+                   property.size,
+                   property.status);
         }
     }
+    cout << "└─────┴──────────────┴──────────────┴───────────────┴──────────┴─────────────┘\n";
+    // if (searchTerm == nullptr || string(searchTerm).empty() || string(property.location) == searchTerm)
+    // {
+    //     cout << property.id << "\t"
+    //          << property.type << "\t"
+    //          << property.location << "\t"
+    //          << property.price << "\t"
+    //          << property.size << "\t"
+    //          << property.status << "\n";
+    // }
     fclose(file);
 }
 
@@ -95,18 +107,22 @@ void Property::addProperty()
     cin >> newProperty.price;
     cout << "Enter Size (in sqft): ";
     cin >> newProperty.size;
-    cout << "Enter Status (Available/Sold): ";
-    cin >> newProperty.status;
+    strcpy(newProperty.status, "Available");
 
-    FILE *file = fopen("property.txt", "a");
-    if (file == nullptr)
+    // FILE *file = fopen(this->fileName, "a");
+    FILE *original = fopen(this->fileName, "r");
+    FILE *temp = fopen("temp.txt", "w");
+
+    if (!temp)
     {
-        cerr << "Error opening file for writing.\n";
+        cerr << "Error opening temp file.\n";
+        if (original)
+            fclose(original);
         return;
     }
 
-    // Assuming PropertyDetails has: id, type, location, price, size, status
-    fprintf(file, "%d %s %s %.2f %d %s\n",
+    // Write new content first in temporary file
+    fprintf(temp, "%d %s %s %.2f %d %s\n",
             newProperty.id,
             newProperty.type,
             newProperty.location,
@@ -114,7 +130,23 @@ void Property::addProperty()
             newProperty.size,
             newProperty.status);
 
-    fclose(file);
+    // Copy old data after
+    if (original)
+    {
+        char buffer[1024];
+        while (fgets(buffer, sizeof(buffer), original))
+        {
+            fputs(buffer, temp);
+        }
+        fclose(original);
+    }
+
+    fclose(temp);
+
+    // Replace original file with temp file
+    remove(this->fileName);
+    rename("temp.txt", this->fileName);
+
     cout << "Property added successfully!\n";
 }
 

@@ -1,3 +1,5 @@
+#include <string>
+
 #pragma once
 
 namespace FileUtils
@@ -10,4 +12,5 @@ namespace FileUtils
     };
 
     char *getFileModeString(FileMode mode);
+
 }
