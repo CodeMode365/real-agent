@@ -8,12 +8,12 @@
 #include "../utils/files/file.h"
 
 using namespace std;
-
-Property::Property()
+//Temporarily removed for array initialization issue
+/*Property::Property()
     : properties() // Initialize properties in the initializer list
 {
     strcpy(this->fileName, this->fileName);
-}
+}*/
 
 void Property::readPropertiesFromFile(const char *searchTerm)
 {
