@@ -20,7 +20,7 @@ reviews:
   high_level_summary: true
   
   # Enable poem generation for fun summaries
-  poem: true
+  poem: false
   
   # Review comments settings
   review_status: true
@@ -36,27 +36,24 @@ reviews:
 
 # Path-based instructions for C++ project
 path_instructions:
-  - path: "src/**/*.cpp"
+  - path: "**/*.cpp"
     instructions: |
       - Check for memory leaks and proper resource management
       - Verify proper use of RAII principles
       - Look for potential null pointer dereferences
       - Check for buffer overflows and unsafe C-style operations
       - Verify proper exception handling
+      - Review code organization and modularity
+      - Check for code duplication
+      - Verify adherence to C++ best practices
+      - Look for potential performance issues
       
-  - path: "src/**/*.h"
+  - path: "**/*.h"
     instructions: |
       - Ensure header guards are properly implemented
       - Check for include dependencies and circular dependencies
       - Verify proper use of const correctness
       - Check for proper documentation of public APIs
-      
-  - path: "**/*.cpp"
-    instructions: |
-      - Review code organization and modularity
-      - Check for code duplication
-      - Verify adherence to C++ best practices
-      - Look for potential performance issues
 
 # Chat settings
 chat:
