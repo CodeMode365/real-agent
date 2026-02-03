@@ -1,0 +1,85 @@
+# CodeRabbit Configuration for Real Estate Management System
+# Visit https://docs.coderabbit.ai for more information
+
+# Language settings
+language: en-US
+
+# Review settings
+reviews:
+  # Enable auto reviews on pull requests
+  auto_review:
+    enabled: true
+    
+  # Review profile - determines the depth and thoroughness of reviews
+  profile: chill # Options: chill, assertive
+  
+  # Request changes workflow - how CodeRabbit interacts with PRs
+  request_changes_workflow: false
+  
+  # Enable high-level summary
+  high_level_summary: true
+  
+  # Enable poem generation for fun summaries
+  poem: false
+  
+  # Review comments settings
+  review_status: true
+  
+  # Collapse walkthrough details by default
+  collapse_walkthrough: false
+  
+  # Enable sequence diagrams for complex changes
+  sequence_diagrams: true
+  
+  # Auto-reply to comments
+  auto_reply: true
+
+# Path-based instructions for C++ project
+path_instructions:
+  - path: "**/*.cpp"
+    instructions: |
+      - Check for memory leaks and proper resource management
+      - Verify proper use of RAII principles
+      - Look for potential null pointer dereferences
+      - Check for buffer overflows and unsafe C-style operations
+      - Verify proper exception handling
+      - Review code organization and modularity
+      - Check for code duplication
+      - Verify adherence to C++ best practices
+      - Look for potential performance issues
+      
+  - path: "**/*.h"
+    instructions: |
+      - Ensure header guards are properly implemented
+      - Check for include dependencies and circular dependencies
+      - Verify proper use of const correctness
+      - Check for proper documentation of public APIs
+
+# Chat settings
+chat:
+  # Enable automated responses to questions
+  auto_reply: true
+
+# Knowledge base configuration
+knowledge_base:
+  # Enable learning from the codebase
+  learnings: true
+  
+  # Filter learnings to avoid sensitive data
+  opt_out_learnings: false
+
+# Tools and checks
+tools:
+  # GitHub Actions integration
+  github-actions:
+    enabled: true
+    
+  # Enable suggestions for improvements
+  suggestions:
+    enabled: true
+
+# Early access features
+early_access: false
+
+# Tone of reviews
+tone_instructions: "Be constructive and educational. Focus on teaching best practices for C++ development, especially around memory management, RAII, and safe coding practices."
