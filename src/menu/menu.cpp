@@ -51,8 +51,8 @@ namespace Menu
                 cout << "Entering Property menu...\n";
                 // Screen::clearScreen();
                 //temporarily disabled due to property constructor issue
-                //Property p;
-                //p.menu();
+                Property p;
+                p.menu();
                 cout << "Exited Property menu.\n";
                 break;
             }
