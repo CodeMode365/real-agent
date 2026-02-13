@@ -1,36 +1,24 @@
 #include <iostream>
 #include <cstdlib>
-#include <string>
+#include <string.h>
 #include "../utils/user/user.h"
+#include "client.h"
 using namespace std;
 
-class Client : public User
-{
-public:
-    void menu()
-    {
-        cout << "\n";
-        cout << "╔════════════════════════════════════════╗\n";
-        cout << "║     Client Management Menu             ║\n";
-        cout << "╚════════════════════════════════════════╝\n";
-        cout << "1. Add Client\n";
-        cout << "2. View Client\n";
-        cout << "3. Back to Main Menu\n";
-    }
 
-    void enterDetails()
+    void Client::enterDetails()
     {
         cout << "Enter Client Name: ";
-        getline(cin, name);
+        gets(name);
         cout << "Enter Client Address: ";
-        getline(cin, address);
+        gets(address);
         cout << "Enter Client Phone: ";
-        getline(cin, phone);
+        gets(phone);
         cout << "Enter Client Email: ";
-        getline(cin, email);
+        gets(email);
     }
 
-    void viewDetails()
+    void Client::viewDetails()
     {
         cout << "\nClient Details:\n";
         cout << "Name: " << name << "\n";
@@ -38,6 +26,28 @@ public:
         cout << "Phone: " << phone << "\n";
         cout << "Email: " << email << "\n";
     }
-
-    ~Client() {}
-};
+    
+    void Client::menu()
+    {
+    	int choice;
+        cout << "\n";
+        cout << "||||||||||||||||||||||||||||||||||||||||||||||\n";
+        cout << "||          Client Management Menu          ||\n";
+        cout << "||||||||||||||||||||||||||||||||||||||||||||||\n";
+        cout << "1. Add Client\n";
+        cout << "2. View Client\n";
+        cout << "3. Back to Main Menu\n";
+        cout << "Enter choice:";
+        cin >>choice;
+        fflush(stdin);
+        switch (choice){
+        	case 1:
+        		enterDetails();
+                break;
+        	case 2:
+        		viewDetails();
+                break;
+        	case 3:
+                break;
+		}
+    }

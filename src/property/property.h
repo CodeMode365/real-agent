@@ -14,8 +14,8 @@ class Property
 {
 private:
     // Private member variables can be declared here
-    PropertyDetails properties[100];
-    char fileName[100] = "property.txt";
+ PropertyDetails properties[100];
+    char fileName[100];
 
     // PropertyDetails *readPropertiesFromFile(const char *searchTerm = "");
     void readPropertiesFromFile(const char *searchTerm = "");
