@@ -8,6 +8,7 @@ TARGET = build/Debug/outDebug
 SRCS = main.cpp \
        src/admin/admin.cpp \
        src/clients/client.cpp \
+       src/seller/seller.cpp \
 	   src/property/property.cpp \
        src/menu/menu.cpp \
        src/utils/files/file.cpp \

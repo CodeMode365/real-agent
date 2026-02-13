@@ -29,4 +29,6 @@ public:
     SellerDetails getSellerById(int id);
 
     void deleteSellerById(int id);
+
+    void updateSellerById(int id);
 };

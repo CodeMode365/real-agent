@@ -6,6 +6,7 @@
 #include "../utils/screen/screen.h"
 #include "../clients/client.h"
 #include "../utils/user/user.h"
+#include "../seller/seller.h"
 #include "menu.h"
 
 using namespace std;
@@ -50,28 +51,28 @@ namespace Menu
             {
                 cout << "Entering Property menu...\n";
                 // Screen::clearScreen();
-                //temporarily disabled due to property constructor issue
+                // temporarily disabled due to property constructor issue
                 Property p;
                 p.menu();
                 cout << "Exited Property menu.\n";
                 break;
             }
-            // Disable for now
-            //  case 2:
-            //  {
-            //      Seller s;
-            //      user = &s;
-            //      user->menu();
-            //      break;
-            //  }
-              case 3:
-              {
-                  Client c;
-                  //user = &c;
-                 // user->menu();
-                 c.menu();
-                  break;
-              }
+                // Disable for now
+            case 2:
+            {
+                Seller s;
+                // user = &s;
+                s.menu();
+                break;
+            }
+            case 3:
+            {
+                Client c;
+                // user = &c;
+                // user->menu();
+                c.menu();
+                break;
+            }
             case 4:
                 cout << "Logged out successfully.\n";
                 cout << "Program ended.\n";
