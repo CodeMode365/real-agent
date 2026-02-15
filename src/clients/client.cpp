@@ -3,6 +3,7 @@
 #include <cstring>
 #include "client.h"
 #include "../utils/screen/screen.h"
+#include "../utils/files/file.h"
 #include "../menu/menu.h"
 
 using namespace std;
@@ -15,7 +16,7 @@ Client::Client()
 void Client::readClientsFromFile()
 {
     ClientDetails client;
-    FILE *file = fopen(this->fileName, "r");
+    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
 
     if (!file)
     {
@@ -62,7 +63,7 @@ void Client::addClient()
     cout << "Enter Client Email: ";
     cin >> client.email;
 
-    FILE *file = fopen(this->fileName, "a");
+    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::APPEND));
     if (!file)
     {
         cout << "Error opening file.\n";
@@ -83,7 +84,7 @@ void Client::addClient()
 ClientDetails Client::getClientById(int id)
 {
     ClientDetails client = {};
-    FILE *file = fopen(this->fileName, "r");
+    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
 
     if (!file)
         return client;
@@ -109,8 +110,8 @@ ClientDetails Client::getClientById(int id)
 
 void Client::deleteClientById(int id)
 {
-    FILE *original = fopen(this->fileName, "r");
-    FILE *temp = fopen("temp.txt", "w");
+    FILE *original = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    FILE *temp = fopen("temp.txt",FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
     ClientDetails client;
     bool found = false;
 
@@ -167,8 +168,8 @@ void Client::deleteClientById(int id)
 
 void Client::updateClientById(int id)
 {
-    FILE *original = fopen(this->fileName, "r");
-    FILE *temp = fopen("temp.txt", "w");
+    FILE *original = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    FILE *temp = fopen("temp.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
     ClientDetails client;
     bool found = false;
 

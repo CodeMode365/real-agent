@@ -2,16 +2,18 @@
 #include <iostream>
 #include <cstdlib>
 
+
+
 namespace Screen
 {
-        void clearScreen()
+       void clearScreen()
         {
-#ifdef _WIN32
+#if defined(_WIN32)|| defined(_WIN64)
                 system("cls");
 #else
                 system("clear");
 #endif
-                std::cout << "\033[2J\033[H";
+                std::cout << "\033[2J\033[H";	
         }
 
         void printHeader(const std::string &title)

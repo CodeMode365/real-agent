@@ -8,7 +8,6 @@ using namespace std;
 // ================= MAIN FUNCTION =================
 int main()
 {
-  cout << "HEllo world";
   Screen::printHeader("REAL ESTATE MANAGEMENT SYSTEM");
 
   Menu::runMenu();

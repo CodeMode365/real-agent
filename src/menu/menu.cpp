@@ -1,5 +1,7 @@
 #include <iostream>
+#include <limits>
 #include <cstdlib>
+#include <stdlib.h>
 #include <stdio.h>
 #include "../admin/admin.h"
 #include "../property/property.h"
@@ -16,20 +18,23 @@ namespace Menu
     void runMenu()
     {
         Admin admin;
+		
 
         // Login validation
         while (!admin.login())
         {
+        	Screen::clearScreen();
             cout << "Invalid login! Try again.\n";
         }
+        Screen::clearScreen();
 
         cout << "Login successful!\n";
 
-        Screen::clearScreen();
+        
 
         showMenu();
     }
-
+    
     int showMenu()
     {
         int choice;
@@ -41,7 +46,7 @@ namespace Menu
             cout << "3. Client Menu\n";
             cout << "4. Logout\n";
             cout << "Enter choice: ";
-            cin >> choice;
+            cin >>choice;
 
             // User *user; // Base class pointer (Polymorphism)
 
@@ -79,7 +84,12 @@ namespace Menu
                 return 0;
 
             default:
+			Screen::clearScreen();
                 cout << "Invalid choice!\n";
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(),'\n');
+                
+                break;
             }
         } while (true);
     }

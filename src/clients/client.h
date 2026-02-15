@@ -1,5 +1,5 @@
-#include "../utils/user/user.h"
 #pragma once
+#include "../utils/user/user.h"
 
 struct ClientDetails
 {

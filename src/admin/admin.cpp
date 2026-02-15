@@ -16,7 +16,6 @@ bool Admin::login()
 {
     string u, p;
     cout << "\n--- Admin Login ---\n";
-    system("cls");
     cout << "Username: ";
     cin >> u;
     cout << "Password: ";
