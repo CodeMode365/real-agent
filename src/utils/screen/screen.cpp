@@ -1,11 +1,19 @@
 #include "screen.h"
 #include <iostream>
 #include <cstdlib>
+#include <limits>
+#include <unistd.h>
 
 
 
 namespace Screen
 {
+        void invalidInput()
+        {
+                usleep(300000);
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+        }
        void clearScreen()
         {
 #if defined(_WIN32)|| defined(_WIN64)
@@ -18,7 +26,7 @@ namespace Screen
 
         void printHeader(const std::string &title)
         {
-                clearScreen();
+                //clearScreen();
                 int totalWidth = std::max(40, static_cast<int>(title.length()) + 4); // 2 for borders, 2 for padding
                 int contentWidth = totalWidth - 2;                                   // exclude borders
                 int padding = contentWidth - static_cast<int>(title.length());

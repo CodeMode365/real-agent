@@ -95,9 +95,11 @@ PropertyDetails Property::getPropertyById(int id)
 
 void Property::addProperty()
 {
+    
     Screen::clearScreen();
+    add:
     Screen::printHeader("Add New Property");
-
+    
     PropertyDetails newProperty;
 
     cout << "Enter Property ID: ";
@@ -111,6 +113,12 @@ void Property::addProperty()
     cout << "Enter Size (in sqft): ";
     cin >> newProperty.size;
     strcpy(newProperty.status, "Available");
+    if(cin.fail()){
+        Screen::invalidInput();
+        Screen::clearScreen();
+        cout << "Invalid input! Please try again.\n";
+        goto add;
+    }
 
     // FILE *file = fopen(this->fileName, "a");
     FILE *original = fopen(this->fileName, "r");
