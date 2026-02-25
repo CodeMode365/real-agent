@@ -14,6 +14,7 @@ class Client : public User
 {
 private:
     char fileName[100];
+    int generateId();
     void readClientsFromFile();
 
 public:

@@ -8,6 +8,7 @@ using namespace std;
 // ================= MAIN FUNCTION =================
 int main()
 {
+  Screen::clearScreen();
   Screen::printHeader("REAL ESTATE MANAGEMENT SYSTEM");
 
   Menu::runMenu();

@@ -9,6 +9,9 @@ namespace FileUtils
         READ,
         WRITE,
         APPEND,
+        READ_WRITE,
+        WRITE_READ,
+        APPEND_READ,
     };
 
     char *getFileModeString(FileMode mode);

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdio>
+#include <errno.h>
 #include <cstring>
 #include "client.h"
 #include "../utils/screen/screen.h"
@@ -44,6 +45,49 @@ void Client::readClientsFromFile()
 
     fclose(file);
 }
+int Client::generateId()
+{
+    int id = 0; // Last ID
+
+    // Try opening file for reading
+    FILE* fp = fopen("clientID.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
+
+    if (fp != NULL)
+    {
+        // File exists, read last ID
+        fscanf(fp, "%d", &id);
+        fclose(fp);
+    }
+    else
+    {
+        if (errno == ENOENT)
+        {
+            // File does not exist → first run
+            std::cout << "ID file not found. Starting with ID 0.\n";
+            id = 0; // starting ID
+        }
+        else
+        {
+            std::cout << "File exists but cannot be opened.\n";
+            return -1; // error
+        }
+    }
+
+    // Increment to get new ID
+    id++;
+
+    // Save the new last ID back to file
+    fp = fopen("clientID.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
+    if (fp == NULL)
+    {
+        std::cout << "Error creating/writing ID file!\n";
+        return -1;
+    }
+    fprintf(fp, "%d", id);
+    fclose(fp);
+
+    return id;
+}
 
 void Client::addClient()
 {
@@ -52,8 +96,8 @@ void Client::addClient()
 
     ClientDetails client;
 
-    cout << "Enter Client ID: ";
-    cin >> client.id;
+    //cout << "Enter Client ID: ";
+   // cin >> client.id;
     cout << "Enter Client Name: ";
     cin >> client.name;
     cout << "Enter Client Address: ";
@@ -68,6 +112,8 @@ void Client::addClient()
     {
         cout << "Error opening file.\n";
         return;
+    }else{
+      client.id = Client::generateId(); // Generate a unique ID for the new client
     }
 
     fprintf(file, "%d %s %s %s %s\n",

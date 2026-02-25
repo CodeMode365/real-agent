@@ -15,6 +15,28 @@ using namespace std;
 
 namespace Menu
 {
+    /*void befMenu(int userType){
+        switch(userType)
+        {
+            case 1:{
+                Admin admin;
+                while(admin.login()){
+                    Screen::clearScreen();
+                    cout << "Login successful!\n";
+                    Menu::runMenu();
+                    break;
+                }}
+                break;
+            case 2:
+                cout<<"Seller menu\n";
+                break;
+            case 3:
+                cout<<"Client menu\n";
+                break;
+            default:
+                cout<<"Invalid user type\n";
+        }
+    }*/
     void runMenu()
     {
         Admin admin;
@@ -24,16 +46,16 @@ namespace Menu
         while (!admin.login())
         {
         	Screen::clearScreen();
+            Screen::invalidInput();
             cout << "Invalid login! Try again.\n";
         }
         Screen::clearScreen();
 
         cout << "Login successful!\n";
 
-        
-
         showMenu();
     }
+
     
     int showMenu()
     {
@@ -85,9 +107,8 @@ namespace Menu
 
             default:
 			Screen::clearScreen();
+                Screen::invalidInput();
                 cout << "Invalid choice!\n";
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(),'\n');
                 
                 break;
             }

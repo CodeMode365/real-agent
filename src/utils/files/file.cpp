@@ -14,6 +14,12 @@ namespace FileUtils
             return "w";
         case FileMode::APPEND:
             return "a";
+        case FileMode::READ_WRITE:
+            return "r+";
+        case FileMode::WRITE_READ:
+            return "w+";
+        case FileMode::APPEND_READ:
+            return "a+";
         default:
             return "r";
         }
