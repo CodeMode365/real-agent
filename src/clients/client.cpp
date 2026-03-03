@@ -98,7 +98,7 @@ void Client::readClientsFromFile()
        client.location,
        &client.minPrice,
        &client.maxPrice,
-       &client.sellerId)
+       &client.sellerId))
     {
         cout << client.id << "\t"
              << client.name << "\t"
@@ -208,7 +208,7 @@ ClientDetails Client::getClientById(int id)
        client.location,
        &client.minPrice,
        &client.maxPrice,
-       &client.sellerId)
+       &client.sellerId))
     {
         if (client.id == id)
         {

@@ -8,6 +8,7 @@ struct PropertyDetails
     float price;
     int size;
     char status[20];
+    int sellerId;
 };
 
 class Property

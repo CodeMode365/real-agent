@@ -29,30 +29,31 @@ void Property::readPropertiesFromFile(const char *searchTerm)
         return;
     }
 
-    cout << "\n┌─────┬──────────────┬──────────────┬───────────────┬──────────┬─────────────┐\n";
-    cout << "│ ID  │     Type     │   Location   │     Price     │   Size   │    Status   │\n";
-    cout << "├─────┼──────────────┼──────────────┼───────────────┼──────────┼─────────────┤\n";
-    while (fscanf(file, "%d %s %s %f %d %s",
-                  &property.id,
-                  property.type,
-                  property.location,
-                  &property.price,
-                  &property.size,
-                  property.status) == 6)
+    cout << "\n┌─────┬──────────────┬──────────────┬───────────────┬──────────┬─────────────────┐────────────┐\n";
+    cout << "│ ID  │     Type     │   Location   │     Price     │   Size   │    Seller ID    │ Status     │\n";
+    cout << "├─────┼──────────────┼──────────────┼───────────────┼──────────┼─────────────────┤────────────┤\n";
+    while (fscanf(file, "%d %s %s %f %d %d %s",
+              &property.id,
+              property.type,
+              property.location,
+              &property.price,
+              &property.size,
+              &property.sellerId,
+              property.status) == 7)
     {
         if ((searchTerm == nullptr || string(searchTerm).empty() || string(property.location) == searchTerm) && string(property.status) == "Available")
         {
-            printf("│ %-3d │ %-12s │ %-12s │ Rs. %-9.1f │ %-8d │ %-11s │\n",
+            printf("│ %-3d │ %-12s │ %-12s │ Rs. %-9.1f │ %-8d │ %-15d │ %-10s │\n",
                    property.id,
                    property.type,
                    property.location,
                    property.price,
                    property.size,
+                   property.sellerId,
                    property.status);
         }
-    }
-    cout << "└─────┴──────────────┴──────────────┴───────────────┴──────────┴─────────────┘\n";
-    // if (searchTerm == nullptr || string(searchTerm).empty() || string(property.location) == searchTerm)
+    }/////////////////////////////////////////////////////////////////////////////////////////////////
+cout << "└─────┴──────────────┴──────────────┴───────────────┴──────────┴─────────────────┴────────────┘\n";    // if (searchTerm == nullptr || string(searchTerm).empty() || string(property.location) == searchTerm)
     // {
     //     cout << property.id << "\t"
     //          << property.type << "\t"
@@ -75,13 +76,14 @@ PropertyDetails Property::getPropertyById(int id)
         return property; // Return empty property on error
     }
 
-    while (fscanf(file, "%d %s %s %f %d %s",
-                  &property.id,
-                  property.type,
-                  property.location,
-                  &property.price,
-                  &property.size,
-                  property.status) == 6)
+    while (fscanf(file, "%d %s %s %f %d %d %s",
+              &property.id,
+              property.type,
+              property.location,
+              &property.price,
+              &property.size,
+              &property.sellerId,
+              property.status) == 7)
     {
         if (property.id == id)
         {
@@ -133,13 +135,14 @@ void Property::addProperty()
     }
 
     // Write new content first in temporary file
-    fprintf(temp, "%d %s %s %.2f %d %s\n",
-            newProperty.id,
-            newProperty.type,
-            newProperty.location,
-            newProperty.price,
-            newProperty.size,
-            newProperty.status);
+    fprintf(temp, "%d %s %s %.2f %d %d %s\n",
+        newProperty.id,
+        newProperty.type,
+        newProperty.location,
+        newProperty.price,
+        newProperty.size,
+        newProperty.sellerId,
+        newProperty.status);
 
     // Copy old data after
     if (original)
@@ -177,13 +180,14 @@ void Property::deletePropertyById(int id)
     PropertyDetails property;
     bool found = false;
 
-    while (fscanf(file, "%d %s %s %f %d %s",
-                  &property.id,
-                  property.type,
-                  property.location,
-                  &property.price,
-                  &property.size,
-                  property.status) == 6)
+    while (fscanf(file, "%d %s %s %f %d %d %s",
+              &property.id,
+              property.type,
+              property.location,
+              &property.price,
+              &property.size,
+              &property.sellerId,
+              property.status) == 7)
     {
         if (property.id == id)
         {
@@ -234,13 +238,14 @@ void Property::updatePropertyById(int id)
     PropertyDetails property;
     bool found = false;
 
-    while (fscanf(file, "%d %s %s %f %d %s",
-                  &property.id,
-                  property.type,
-                  property.location,
-                  &property.price,
-                  &property.size,
-                  property.status) == 6)
+    while (fscanf(file, "%d %s %s %f %d %d %s",
+              &property.id,
+              property.type,
+              property.location,
+              &property.price,
+              &property.size,
+              &property.sellerId,
+              property.status) == 7)
     {
         if (property.id == id)
         {
