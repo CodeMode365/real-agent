@@ -8,15 +8,75 @@
 #include "../menu/menu.h"
 
 using namespace std;
+void Client::updateClientRequirements(int id)
+{
+    cout << "Enter the property requirements for client ID " << id << ":\n";
+    FILE *file = fopen("Clients.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ_WRITE));
+    if (!file)
+    {
+        cout << "Error opening file.\n";
+        return;
+    }else{
+        ClientDetails client={};
+        bool found = false;
+
+        while (fscanf(file, "%d %49s %69s %13s %69s",
+                      &client.id,
+                      client.name,
+                      client.address,
+                      client.phone,
+                      client.email) == 5)
+        {
+            if (client.id == id)
+            {
+                found = true;
+                cout << "Enter the property location(0 for any): ";
+                cin >> client.location;
+                cout<< "Enter the minimum price(0 for any): ";
+                cin >> client.minPrice;
+                cout << "Enter the maximum price(0 for any): ";
+                cin >> client.maxPrice;
+                cout << "Seller ID (0 for any): ";
+                cin >> client.sellerId;
+                fclose(file);
+                file = fopen("clients.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
+                if (!file)
+                {
+                    cout << "Error opening file for writing.\n";
+                    return;
+                }
+                fprintf(file, "%d %s %s %s %s %s %d %d %d \n",
+                        client.id,
+                        client.name,
+                        client.address,
+                        client.phone,
+                        client.email,
+                        client.location,
+                        client.minPrice,
+                        client.maxPrice,
+                        client.sellerId);
+            }
+        }
+
+        if (!found)
+        {
+            cout << "Client ID not found!\n";
+            fclose(file);
+            return;
+        }
+    }
+    
+}
 
 Client::Client()
 {
     strcpy(this->fileName, "clients.txt");
 }
 
+
 void Client::readClientsFromFile()
 {
-    ClientDetails client;
+    ClientDetails client={};
     FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
 
     if (!file)
@@ -29,12 +89,16 @@ void Client::readClientsFromFile()
     cout << "ID\tName\tAddress\tPhone\tEmail\n";
     cout << "---------------------------------------------------------------\n";
 
-    while (fscanf(file, "%d %49s %69s %13s %69s",
-                  &client.id,
-                  client.name,
-                  client.address,
-                  client.phone,
-                  client.email) == 5)
+    while (fscanf(file, "%d %49s %69s %13s %69s %49s %d %d %d",
+       &client.id,
+       client.name,
+       client.address,
+       client.phone,
+       client.email,
+       client.location,
+       &client.minPrice,
+       &client.maxPrice,
+       &client.sellerId)
     {
         cout << client.id << "\t"
              << client.name << "\t"
@@ -94,7 +158,7 @@ void Client::addClient()
     Screen::clearScreen();
     Screen::printHeader("Add Client");
 
-    ClientDetails client;
+    ClientDetails client={};
 
     //cout << "Enter Client ID: ";
    // cin >> client.id;
@@ -135,12 +199,16 @@ ClientDetails Client::getClientById(int id)
     if (!file)
         return client;
 
-    while (fscanf(file, "%d %49s %69s %13s %69s",
-                  &client.id,
-                  client.name,
-                  client.address,
-                  client.phone,
-                  client.email) == 5)
+    while (fscanf(file, "%d %49s %69s %13s %69s %49s %d %d %d",
+       &client.id,
+       client.name,
+       client.address,
+       client.phone,
+       client.email,
+       client.location,
+       &client.minPrice,
+       &client.maxPrice,
+       &client.sellerId)
     {
         if (client.id == id)
         {
@@ -158,7 +226,7 @@ void Client::deleteClientById(int id)
 {
     FILE *original = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
     FILE *temp = fopen("temp.txt",FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
-    ClientDetails client;
+    ClientDetails client={};
     bool found = false;
 
     if (!original || !temp)
@@ -216,7 +284,7 @@ void Client::updateClientById(int id)
 {
     FILE *original = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
     FILE *temp = fopen("temp.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
-    ClientDetails client;
+    ClientDetails client={};
     bool found = false;
 
     if (!original || !temp)
@@ -288,11 +356,12 @@ void Client::viewClients()
         cout << "\nChoose an option:\n";
         cout << "1. Delete Client by ID\n";
         cout << "2. Update Client details\n";
-        cout << "3. Back to Client Menu\n";
+        cout << "3. Update Client requirements\n";
+        cout << "4. Back to Client Menu\n";
         cout << "Enter choice: ";
         cin >> choice;
 
-        if (choice == 3)
+        if (choice == 4)
             break;
 
         int id;

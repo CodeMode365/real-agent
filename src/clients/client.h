@@ -8,6 +8,10 @@ struct ClientDetails
     char address[70];
     char phone[14];
     char email[70];
+    char location[50];
+    int minPrice;
+    int maxPrice;
+    int sellerId;
 };
 
 class Client : public User
@@ -28,6 +32,7 @@ public:
     void viewClients();
     ClientDetails getClientById(int id);
     void updateClientById(int id);
+    void updateClientRequirements(int id);
     void deleteClientById(int id);
 
     ~Client() {}
