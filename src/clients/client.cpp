@@ -20,12 +20,18 @@ void Client::updateClientRequirements(int id)
         ClientDetails client={};
         bool found = false;
 
-        while (fscanf(file, "%d %49s %69s %13s %69s",
-                      &client.id,
-                      client.name,
-                      client.address,
-                      client.phone,
-                      client.email) == 5)
+        while (fscanf(file, "%d %s %s %s %s %s %f %f %d \n",
+                        client.id,
+                        client.name,
+                        client.address,
+                        client.phone,
+                        client.email,
+                        client.location,
+                        client.minArea,
+                        client.maxArea,
+                        client.minPrice,
+                        client.maxPrice,
+                        client.sellerId) == 9)
         {
             if (client.id == id)
             {
@@ -45,13 +51,15 @@ void Client::updateClientRequirements(int id)
                     cout << "Error opening file for writing.\n";
                     return;
                 }
-                fprintf(file, "%d %s %s %s %s %s %d %d %d \n",
+                fprintf(file, "%d %s %s %s %s %s %f %f %d \n",
                         client.id,
                         client.name,
                         client.address,
                         client.phone,
                         client.email,
                         client.location,
+                        client.minArea,
+                        client.maxArea,
                         client.minPrice,
                         client.maxPrice,
                         client.sellerId);
@@ -86,16 +94,18 @@ void Client::readClientsFromFile()
     }
 
     cout << "\n---- Client List ----\n";
-    cout << "ID\tName\tAddress\tPhone\tEmail\n";
-    cout << "---------------------------------------------------------------\n";
+    cout << "ID\tName\tAddress\tPhone\tEmail\tLocation\tMinArea\tMaxArea\tMinPrice\tMaxPrice\tSellerID\n";
+    cout << "----------------------------------------------------------------------------------------------------------------\n";
 
-    while (fscanf(file, "%d %49s %69s %13s %69s %49s %d %d %d",
+    while (fscanf(file, "%d %49s %69s %13s %69s %49s %d %d %f %f %d",
        &client.id,
        client.name,
        client.address,
        client.phone,
        client.email,
        client.location,
+       &client.minArea,
+       &client.maxArea,
        &client.minPrice,
        &client.maxPrice,
        &client.sellerId))
@@ -104,7 +114,13 @@ void Client::readClientsFromFile()
              << client.name << "\t"
              << client.address << "\t"
              << client.phone << "\t"
-             << client.email << "\n";
+             << client.email << "\t"
+             << client.location << "\t"
+             << client.minArea << "\t"
+             << client.maxArea << "\t"
+             << client.minPrice << "\t"
+             << client.maxPrice << "\t"
+             << client.sellerId << "\n";
     }
 
     fclose(file);
@@ -170,6 +186,19 @@ void Client::addClient()
     cin >> client.phone;
     cout << "Enter Client Email: ";
     cin >> client.email;
+    cout << "Enter Client Requirements:\n";
+    cout << "Location (0 for any): ";
+    cin >> client.location;
+    cout << "Minimum Area (0 for any): ";
+    cin >> client.minArea;
+    cout << "Maximum Area (0 for any): ";
+    cin >> client.maxArea;
+    cout << "Enter Minimum Price: ";
+    cin >> client.minPrice;
+    cout << "Enter Maximum Price: ";
+    cin >> client.maxPrice;
+    cout << "Enter Seller ID: ";
+    cin >> client.sellerId;
 
     FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::APPEND));
     if (!file)
@@ -180,12 +209,19 @@ void Client::addClient()
       client.id = Client::generateId(); // Generate a unique ID for the new client
     }
 
-    fprintf(file, "%d %s %s %s %s\n",
+    fprintf(file, "%d %s %s %s %s %s %d %d %f %f %d\n",
             client.id,
             client.name,
             client.address,
             client.phone,
-            client.email);
+            client.email,
+            client.location,
+            client.minArea,
+            client.maxArea,
+            client.minPrice,
+            client.maxPrice,
+            client.sellerId
+        );
 
     fclose(file);
     cout << "Client added successfully!\n";
@@ -199,16 +235,18 @@ ClientDetails Client::getClientById(int id)
     if (!file)
         return client;
 
-    while (fscanf(file, "%d %49s %69s %13s %69s %49s %d %d %d",
+    while (fscanf(file, "%d %49s %69s %13s %69s %49s %f %f %d",
        &client.id,
        client.name,
        client.address,
        client.phone,
        client.email,
        client.location,
-       &client.minPrice,
-       &client.maxPrice,
-       &client.sellerId))
+     &client.minArea,
+     &client.maxArea,
+     &client.minPrice,
+     &client.maxPrice,
+     &client.sellerId)== 11)
     {
         if (client.id == id)
         {
@@ -239,21 +277,33 @@ void Client::deleteClientById(int id)
         return;
     }
 
-    while (fscanf(original, "%d %49s %69s %13s %69s",
-                  &client.id,
-                  client.name,
-                  client.address,
-                  client.phone,
-                  client.email) == 5)
+    while (fscanf(original, "%d %49s %69s %13s %69s %49s %f %f %d",
+       &client.id,
+       client.name,
+       client.address,
+       client.phone,
+       client.email,
+       client.location,
+     &client.minArea,
+     &client.maxArea,
+     &client.minPrice,
+     &client.maxPrice,
+     &client.sellerId) == 11)
     {
         if (client.id != id)
         {
-            fprintf(temp, "%d %s %s %s %s\n",
+            fprintf(temp, "%d %s %s %s %s %s %d %d %f %f %d\n",
                     client.id,
                     client.name,
                     client.address,
                     client.phone,
-                    client.email);
+                    client.email,
+                    client.location,
+                    client.minArea,
+                    client.maxArea,
+                    client.minPrice,
+                    client.maxPrice,
+                    client.sellerId);
         }
         else
         {
@@ -297,12 +347,18 @@ void Client::updateClientById(int id)
         return;
     }
 
-    while (fscanf(original, "%d %49s %69s %13s %69s",
-                  &client.id,
-                  client.name,
-                  client.address,
-                  client.phone,
-                  client.email) == 5)
+    while (fscanf(original, "%d %49s %69s %13s %69s %49s %f %f %d",
+       &client.id,
+       client.name,
+       client.address,
+       client.phone,
+       client.email,
+       client.location,
+     &client.minArea,
+     &client.maxArea,
+     &client.minPrice,
+     &client.maxPrice,
+     &client.sellerId) == 11)
     {
         if (client.id == id)
         {
@@ -315,14 +371,32 @@ void Client::updateClientById(int id)
             cin >> client.phone;
             cout << "Enter New Email (Current: " << client.email << "): ";
             cin >> client.email;
+            cout << "Enter New Location (Current: " << client.location << "): ";
+            cin >> client.location;
+            cout << "Enter New Min Area (Current: " << client.minArea << "): ";
+            cin >> client.minArea;
+            cout << "Enter New Max Area (Current: " << client.maxArea << "): ";
+            cin >> client.maxArea;
+            cout << "Enter New Min Price (Current: " << client.minPrice << "): ";
+            cin >> client.minPrice;
+            cout << "Enter New Max Price (Current: " << client.maxPrice << "): ";
+            cin >> client.maxPrice;
+            cout << "Enter New Seller ID (Current: " << client.sellerId << "): ";
+            cin >> client.sellerId;
         }
 
-        fprintf(temp, "%d %s %s %s %s\n",
+        fprintf(temp, "%d %s %s %s %s %s %d %d %f %f %d\n",
                 client.id,
                 client.name,
                 client.address,
                 client.phone,
-                client.email);
+                client.email,
+                client.location,
+                client.minArea,
+                client.maxArea,
+                client.minPrice,
+                client.maxPrice,
+                client.sellerId);
     }
 
     fclose(original);
@@ -377,6 +451,10 @@ void Client::viewClients()
             cin >> id;
             updateClientById(id);
             break;
+        case 3:
+            cout << "Enter Client ID to update requirements: ";
+            cin >> id;
+            updateClientRequirements(id);
         default:
             cout << "Invalid choice!\n";
             cout << "Press Enter to continue...";

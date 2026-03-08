@@ -2,8 +2,7 @@
 
 namespace Menu
 {
-    void runMenu();
-
+    void runMenu(); 
     int showMenu();
 
 }

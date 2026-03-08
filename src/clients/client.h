@@ -9,8 +9,10 @@ struct ClientDetails
     char phone[14];
     char email[70];
     char location[50];
-    int minPrice;
-    int maxPrice;
+    int minArea;
+    int maxArea;
+    float minPrice;
+    float maxPrice;
     int sellerId;
 };
 

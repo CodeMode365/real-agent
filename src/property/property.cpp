@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "property.h"
+#include "../clients/client.h"
 #include "../utils/screen/screen.h"
 #include "../menu/menu.h"
 #include "../utils/files/file.h"
@@ -63,6 +64,194 @@ cout << "└─────┴──────────────┴─�
     //          << property.status << "\n";
     // }
     fclose(file);
+}
+/*void Property::searchPropertyByRequirements()
+{
+    PropertyDetails property;
+    char location[50];
+    int minArea, maxArea, minPrice, maxPrice;
+    int minSize, maxSize, clientId;
+     cout << "Enter the Client ID to search for properties: ";
+    cin >> clientId;
+    ClientDetails client = Client::getClientById(clientId);
+    if (client.id == 0)
+    {
+        cout << "Client not found.\n";
+        return;
+    }
+    bool foundClient = false;
+    FILE *fp = fopen("clients.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
+     while (fscanf(file, "%d %49s %69s %13s %69s %49s %d %d %d",
+       &client.id,
+       client.name,
+       client.address,
+       client.phone,
+       client.email,
+       client.location,
+       &client.minArea,
+       &client.maxArea,
+       &client.minPrice,
+       &client.maxPrice,
+       &client.sellerId)== 11)
+    {
+        if (client.id == clientId)
+        {
+            foundClient = true;
+            strcpy(location, client.location);
+            minArea = client.minArea;
+            maxArea = client.maxArea;
+            minPrice = client.minPrice;
+            maxPrice = client.maxPrice;
+            minSize = client.minSize;
+            maxSize = client.maxSize;
+            break;
+        }
+    }
+
+    FILE *file = fopen("properties.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    if (file == nullptr)
+    {
+        cerr << "Error opening file for reading.\n";
+        
+    }
+
+    while (fscanf(file, "%d %s %s %f %d %d %s",
+              &property.id,
+              property.type,
+              property.location,
+              &property.price,
+              &property.size,
+              &property.sellerId,
+              property.status) == 7)
+    {
+        bool matches = true;
+
+        if (strcmp(location, "0") != 0 && strcmp(property.location, location) != 0)
+            matches = false;
+        if (minPrice > 0 && property.price < minPrice)
+            matches = false;
+        if (maxPrice > 0 && property.price > maxPrice)
+            matches = false;
+        if (minSize > 0 && property.size < minSize)
+            matches = false;
+        if (maxSize > 0 && property.size > maxSize)
+            matches = false;
+
+        if (matches && string(property.status) == "Available")
+        {
+           fprintf(file,"│ %-3d │ %-12s │ %-12s │ Rs. %-9.1f │ %-8d │ %-15d │ %-10s │\n",
+                   property.id,
+                   property.type,
+                   property.location,
+                   property.price,
+                   property.size,
+                   property.sellerId,
+                   property.status);
+            return;
+        }
+    }
+
+    fclose(file);
+    cout << "No properties found matching the requirements.\n";
+    cout << "Press Enter to continue...";
+    cin.ignore();
+    cin.get();
+}*/
+
+void Property::searchPropertyByRequirements()
+{
+    PropertyDetails property;
+    ClientDetails client;
+    char location[50];
+    int minArea, maxArea, clientId;
+    float minPrice, maxPrice;
+
+    cout << "Enter the Client ID to search for properties: ";
+    cin >> clientId;
+
+    bool foundClient = false;
+
+    FILE *fp = fopen("clients.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
+
+    while (fscanf(fp, "%d %49s %69s %13s %69s %49s %d %d %d %d %d",
+                  &client.id,
+                  client.name,
+                  client.address,
+                  client.phone,
+                  client.email,
+                  client.location,
+                  &client.minArea,
+                  &client.maxArea,
+                  &client.minPrice,
+                  &client.maxPrice,
+                  &client.sellerId) == 11)
+    {
+        if (client.id == clientId)
+        {
+            foundClient = true;
+            strcpy(location, client.location);
+            minArea = client.minArea;
+            maxArea = client.maxArea;
+            minPrice = client.minPrice;
+            maxPrice = client.maxPrice;
+            break;
+        }
+    }
+
+    fclose(fp);
+
+    if (!foundClient)
+    {
+        cout << "Client not found.\n";
+        return;
+    }
+
+    FILE *file = fopen("properties.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
+
+    if (file == nullptr)
+    {
+        cerr << "Error opening file for reading.\n";
+        return;
+    }
+
+    while (fscanf(file, "%d %s %s %f %d %d %s",
+                  &property.id,
+                  property.type,
+                  property.location,
+                  &property.price,
+                  &property.size,
+                  &property.sellerId,
+                  property.status) == 7)
+    {
+        bool matches = true;
+
+        if (strcmp(location, "0") != 0 && strcmp(property.location, location) != 0)
+            matches = false;
+
+        if (minPrice > 0 && property.price < minPrice)
+            matches = false;
+
+        if (maxPrice > 0 && property.price > maxPrice)
+            matches = false;
+
+        if (matches && string(property.status) == "Available")
+        {
+            printf("│ %-3d │ %-12s │ %-12s │ Rs. %-9.1f │ %-8d │ %-15d │ %-10s │\n",
+                   property.id,
+                   property.type,
+                   property.location,
+                   property.price,
+                   property.size,
+                   property.sellerId,
+                   property.status);
+        }
+    }
+
+    fclose(file);
+
+    cout << "Press Enter to continue...";
+    cin.ignore();
+    cin.get();
 }
 
 PropertyDetails Property::getPropertyById(int id)

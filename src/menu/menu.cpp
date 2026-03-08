@@ -66,7 +66,8 @@ namespace Menu
             cout << "1. Property Menu\n";
             cout << "2. Seller Menu\n";
             cout << "3. Client Menu\n";
-            cout << "4. Logout\n";
+            cout << "4. Search Property for Client\n";
+            cout << "5. Logout\n";
             cout << "Enter choice: ";
             cin >>choice;
 
@@ -101,6 +102,10 @@ namespace Menu
                 break;
             }
             case 4:
+            cout << "Search property for client in progress...\n";
+                // user->searchProperty();
+                break;
+            case 5:
                 cout << "Logged out successfully.\n";
                 cout << "Program ended.\n";
                 return 0;

@@ -36,6 +36,8 @@ public:
 
     void deletePropertyById(int id);
 
+    void searchPropertyByRequirements();
+
     void updatePropertyById(int id);
 
     // void searchProperty();
