@@ -40,7 +40,6 @@ namespace Menu
     void runMenu()
     {
         Admin admin;
-		
 
         // Login validation
         while (!admin.login())
@@ -60,8 +59,12 @@ namespace Menu
     int showMenu()
     {
         int choice;
+        Property property;
+
         do
         {
+            Screen::clearScreen();
+            Screen::printHeader("Main Menu");
             cout << "\n----- MAIN MENU -----\n";
             cout << "1. Property Menu\n";
             cout << "2. Seller Menu\n";
@@ -77,33 +80,23 @@ namespace Menu
             {
             case 1:
             {
-                cout << "Entering Property menu...\n";
-                // Screen::clearScreen();
-                // temporarily disabled due to property constructor issue
-                Property p;
-                p.menu();
-                cout << "Exited Property menu.\n";
+                property.menu();
                 break;
             }
-                // Disable for now
             case 2:
             {
                 Seller s;
-                // user = &s;
                 s.menu();
                 break;
             }
             case 3:
             {
                 Client c;
-                // user = &c;
-                // user->menu();
                 c.menu();
                 break;
             }
             case 4:
-            cout << "Search property for client in progress...\n";
-                // user->searchProperty();
+                property.searchPropertyByRequirements();
                 break;
             case 5:
                 cout << "Logged out successfully.\n";

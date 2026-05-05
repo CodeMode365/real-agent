@@ -14,8 +14,9 @@ private:
     SellerDetails sellers[100];
     char fileName[100];
 
+    int generateId();
     void readSellersFromFile();
-    void writeSellerToFile(SellerDetails seller);
+    bool sellerHasProperties(int id);
 
 public:
     Seller();

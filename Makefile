@@ -17,7 +17,15 @@ SRCS = main.cpp \
 
 
 # Object files
-OBJS = $(patsubst src/%.cpp, build/Debug/%.o, $(SRCS))
+OBJS = build/Debug/main.o \
+       build/Debug/admin/admin.o \
+       build/Debug/clients/client.o \
+       build/Debug/seller/seller.o \
+       build/Debug/property/property.o \
+       build/Debug/menu/menu.o \
+       build/Debug/utils/files/file.o \
+       build/Debug/utils/screen/screen.o \
+       build/Debug/utils/user/user.o
 
 # Default target: build and run
 all: $(TARGET)
@@ -31,6 +39,10 @@ $(TARGET): $(OBJS)
 
 # Compile each .cpp -> .o
 build/Debug/%.o: src/%.cpp
+	mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+build/Debug/main.o: main.cpp
 	mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 

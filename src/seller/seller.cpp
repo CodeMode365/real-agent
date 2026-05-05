@@ -1,21 +1,132 @@
-#include <iostream>
 #include <cstdio>
 #include <cstring>
+#include <iomanip>
+#include <iostream>
 #include "seller.h"
-#include "../utils/screen/screen.h"
 #include "../menu/menu.h"
+#include "../utils/files/file.h"
+#include "../utils/screen/screen.h"
 
 using namespace std;
+
+namespace
+{
+    bool readSellerRecord(FILE *file, SellerDetails &seller)
+    {
+        char line[512] = {};
+        if (!fgets(line, sizeof(line), file))
+        {
+            return false;
+        }
+
+        if (sscanf(line, "%d|%99[^|]|%49[^|]|%149[^\n]",
+                   &seller.id,
+                   seller.name,
+                   seller.contact,
+                   seller.address) == 4)
+        {
+            return true;
+        }
+
+        return sscanf(line, "%d %99s %49s %149s",
+                      &seller.id,
+                      seller.name,
+                      seller.contact,
+                      seller.address) == 4;
+    }
+
+    void writeSellerRecord(FILE *file, const SellerDetails &seller)
+    {
+        fprintf(file, "%d|%s|%s|%s\n",
+                seller.id,
+                seller.name,
+                seller.contact,
+                seller.address);
+    }
+
+    void waitForEnter()
+    {
+        cout << "Press Enter to continue...";
+        cin.ignore();
+        cin.get();
+    }
+}
 
 Seller::Seller()
 {
     strcpy(this->fileName, "sellers.txt");
 }
 
+int Seller::generateId()
+{
+    int id = 0;
+    FILE *file = fopen("sellerID.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
+
+    if (file)
+    {
+        fscanf(file, "%d", &id);
+        fclose(file);
+    }
+
+    ++id;
+
+    file = fopen("sellerID.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
+    if (!file)
+    {
+        return -1;
+    }
+
+    fprintf(file, "%d", id);
+    fclose(file);
+    return id;
+}
+
+bool Seller::sellerHasProperties(int id)
+{
+    FILE *file = fopen("properties.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    if (!file)
+    {
+        return false;
+    }
+
+    char line[512] = {};
+    while (fgets(line, sizeof(line), file))
+    {
+        int propertyId = 0;
+        char type[50] = {};
+        char location[100] = {};
+        float price = 0;
+        int size = 0;
+        int sellerId = 0;
+        char status[20] = {};
+
+        if (sscanf(line, "%d|%49[^|]|%99[^|]|%f|%d|%d|%19[^\n]",
+                   &propertyId,
+                   type,
+                   location,
+                   &price,
+                   &size,
+                   &sellerId,
+                   status) != 7)
+        {
+            continue;
+        }
+
+        if (sellerId == id)
+        {
+            fclose(file);
+            return true;
+        }
+    }
+
+    fclose(file);
+    return false;
+}
+
 void Seller::readSellersFromFile()
 {
-    SellerDetails seller;
-    FILE *file = fopen(this->fileName, "r");
+    SellerDetails seller = {};
+    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
 
     if (!file)
     {
@@ -23,20 +134,21 @@ void Seller::readSellersFromFile()
         return;
     }
 
-    cout << "\n---- Seller List ----\n";
-    cout << "ID\tName\tContact\tAddress\n";
-    cout << "------------------------------------------\n";
+    cout << "\n"
+         << left
+         << setw(8) << "ID"
+         << setw(24) << "Name"
+         << setw(20) << "Contact"
+         << setw(30) << "Address" << "\n";
+    cout << string(82, '-') << "\n";
 
-    while (fscanf(file, "%d %s %s %s",
-                  &seller.id,
-                  seller.name,
-                  seller.contact,
-                  seller.address) == 4)
+    while (readSellerRecord(file, seller))
     {
-        cout << seller.id << "\t"
-             << seller.name << "\t"
-             << seller.contact << "\t"
-             << seller.address << "\n";
+        cout << left
+             << setw(8) << seller.id
+             << setw(24) << seller.name
+             << setw(20) << seller.contact
+             << setw(30) << seller.address << "\n";
     }
 
     fclose(file);
@@ -47,34 +159,32 @@ void Seller::addSeller()
     Screen::clearScreen();
     Screen::printHeader("Add Seller");
 
-    SellerDetails newSeller;
+    SellerDetails newSeller = {};
+    newSeller.id = generateId();
 
-    cout << "Enter Seller ID: ";
-    cin >> newSeller.id;
+    if (newSeller.id < 0)
+    {
+        cout << "Unable to generate seller ID.\n";
+        return;
+    }
 
+    cout << "Seller ID: " << newSeller.id << "\n";
     cout << "Enter Seller Name: ";
-    cin >> newSeller.name;
-
+    cin >> ws;
+    cin.getline(newSeller.name, sizeof(newSeller.name));
     cout << "Enter Contact: ";
-    cin >> newSeller.contact;
-
+    cin.getline(newSeller.contact, sizeof(newSeller.contact));
     cout << "Enter Address: ";
-    cin >> newSeller.address;
+    cin.getline(newSeller.address, sizeof(newSeller.address));
 
-    FILE *file = fopen(this->fileName, "a");
-
+    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::APPEND));
     if (!file)
     {
         cout << "Error opening file.\n";
         return;
     }
 
-    fprintf(file, "%d %s %s %s\n",
-            newSeller.id,
-            newSeller.name,
-            newSeller.contact,
-            newSeller.address);
-
+    writeSellerRecord(file, newSeller);
     fclose(file);
 
     cout << "Seller added successfully!\n";
@@ -83,16 +193,14 @@ void Seller::addSeller()
 SellerDetails Seller::getSellerById(int id)
 {
     SellerDetails seller = {};
-    FILE *file = fopen(this->fileName, "r");
+    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
 
     if (!file)
+    {
         return seller;
+    }
 
-    while (fscanf(file, "%d %s %s %s",
-                  &seller.id,
-                  seller.name,
-                  seller.contact,
-                  seller.address) == 4)
+    while (readSellerRecord(file, seller))
     {
         if (seller.id == id)
         {
@@ -102,45 +210,48 @@ SellerDetails Seller::getSellerById(int id)
     }
 
     fclose(file);
+    seller.id = 0;
     return seller;
 }
 
 void Seller::deleteSellerById(int id)
 {
-    FILE *original = fopen(this->fileName, "r");
-    FILE *temp = fopen("temp.txt", "w");
+    if (sellerHasProperties(id))
+    {
+        cout << "Seller is linked to one or more properties and cannot be deleted.\n";
+        waitForEnter();
+        return;
+    }
 
-    SellerDetails seller;
+    FILE *original = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    FILE *temp = fopen("temp.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
+
+    SellerDetails seller = {};
     bool found = false;
 
     if (!original || !temp)
     {
         cout << "Error handling files.\n";
         if (original)
+        {
             fclose(original);
+        }
         if (temp)
+        {
             fclose(temp);
+        }
         return;
     }
 
-    while (fscanf(original, "%d %s %s %s",
-                  &seller.id,
-                  seller.name,
-                  seller.contact,
-                  seller.address) == 4)
+    while (readSellerRecord(original, seller))
     {
-        if (seller.id != id)
-        {
-            fprintf(temp, "%d %s %s %s\n",
-                    seller.id,
-                    seller.name,
-                    seller.contact,
-                    seller.address);
-        }
-        else
+        if (seller.id == id)
         {
             found = true;
+            continue;
         }
+
+        writeSellerRecord(temp, seller);
     }
 
     fclose(original);
@@ -149,59 +260,47 @@ void Seller::deleteSellerById(int id)
     remove(this->fileName);
     rename("temp.txt", this->fileName);
 
-    if (found)
-    {
-        cout << "Seller deleted successfully!\n";
-    }
-    else
-    {
-        cout << "Seller ID not found!\n";
-    }
-    cout << "Press Enter to continue...";
-    cin.ignore();
-    cin.get();
+    cout << (found ? "Seller deleted successfully!\n" : "Seller ID not found!\n");
+    waitForEnter();
 }
 
 void Seller::updateSellerById(int id)
 {
-    FILE *original = fopen(this->fileName, "r");
-    FILE *temp = fopen("temp.txt", "w");
+    FILE *original = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    FILE *temp = fopen("temp.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
 
-    SellerDetails seller;
+    SellerDetails seller = {};
     bool found = false;
 
     if (!original || !temp)
     {
         cout << "Error handling files.\n";
         if (original)
+        {
             fclose(original);
+        }
         if (temp)
+        {
             fclose(temp);
+        }
         return;
     }
 
-    while (fscanf(original, "%d %s %s %s",
-                  &seller.id,
-                  seller.name,
-                  seller.contact,
-                  seller.address) == 4)
+    while (readSellerRecord(original, seller))
     {
         if (seller.id == id)
         {
             found = true;
             cout << "Enter New Name (Current: " << seller.name << "): ";
-            cin >> seller.name;
+            cin >> ws;
+            cin.getline(seller.name, sizeof(seller.name));
             cout << "Enter New Contact (Current: " << seller.contact << "): ";
-            cin >> seller.contact;
+            cin.getline(seller.contact, sizeof(seller.contact));
             cout << "Enter New Address (Current: " << seller.address << "): ";
-            cin >> seller.address;
+            cin.getline(seller.address, sizeof(seller.address));
         }
 
-        fprintf(temp, "%d %s %s %s\n",
-                seller.id,
-                seller.name,
-                seller.contact,
-                seller.address);
+        writeSellerRecord(temp, seller);
     }
 
     fclose(original);
@@ -210,22 +309,13 @@ void Seller::updateSellerById(int id)
     remove(this->fileName);
     rename("temp.txt", this->fileName);
 
-    if (found)
-    {
-        cout << "Seller updated successfully!\n";
-    }
-    else
-    {
-        cout << "Seller ID not found!\n";
-    }
-    cout << "Press Enter to continue...";
-    cin.ignore();
-    cin.get();
+    cout << (found ? "Seller updated successfully!\n" : "Seller ID not found!\n");
+    waitForEnter();
 }
 
 void Seller::viewSellers()
 {
-    int choice;
+    int choice = 0;
 
     do
     {
@@ -233,67 +323,62 @@ void Seller::viewSellers()
         Screen::printHeader("View Sellers");
         readSellersFromFile();
 
-        cout << "\nChoose an option:\n";
-        cout << "1. Delete Seller by ID\n";
-        cout << "2. Update Seller details\n";
-        cout << "3. Back to Seller Menu\n";
+        cout << "\n1. Delete Seller by ID\n";
+        cout << "2. Update Seller by ID\n";
+        cout << "3. Back\n";
         cout << "Enter choice: ";
         cin >> choice;
 
-        if (choice == 3)
-            break;
-
-        int id;
-        switch (choice)
+        if (choice == 1)
         {
-        case 1:
+            int id = 0;
             cout << "Enter Seller ID to delete: ";
             cin >> id;
             deleteSellerById(id);
-            break;
-        case 2:
+        }
+        else if (choice == 2)
+        {
+            int id = 0;
             cout << "Enter Seller ID to update: ";
             cin >> id;
             updateSellerById(id);
-            break;
-        default:
-            cout << "Invalid choice!\n";
-            cout << "Press Enter to continue...";
-            cin.ignore();
-            cin.get();
-            break;
         }
-    } while (true);
+        else if (choice != 3)
+        {
+            cout << "Invalid choice!\n";
+            waitForEnter();
+        }
+    } while (choice != 3);
 }
 
 void Seller::menu()
 {
-    int choice;
+    int choice = 0;
 
-    Screen::clearScreen();
-    Screen::printHeader("Seller Menu");
-
-    cout << "1. Add Seller\n";
-    cout << "2. View Sellers\n";
-    cout << "3. Back to Main Menu\n";
-    cout << "Enter choice: ";
-    cin >> choice;
-
-    switch (choice)
+    do
     {
-    case 1:
-        addSeller();
-        break;
+        Screen::clearScreen();
+        Screen::printHeader("Seller Menu");
 
-    case 2:
-        viewSellers();
-        break;
+        cout << "1. Add Seller\n";
+        cout << "2. View Sellers\n";
+        cout << "3. Back to Main Menu\n";
+        cout << "Enter choice: ";
+        cin >> choice;
 
-    case 3:
-        Menu::showMenu();
-        break;
-
-    default:
-        cout << "Invalid choice.\n";
-    }
+        if (choice == 1)
+        {
+            addSeller();
+            waitForEnter();
+        }
+        else if (choice == 2)
+        {
+            viewSellers();
+        }
+        else if (choice != 3)
+        {
+            cout << "Invalid choice.\n";
+            waitForEnter();
+        }
+    } while (choice != 3);
 }

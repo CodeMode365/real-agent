@@ -14,14 +14,11 @@ struct PropertyDetails
 class Property
 {
 private:
-    // Private member variables can be declared here
- PropertyDetails properties[100];
+    PropertyDetails properties[100];
     char fileName[100];
 
-    // PropertyDetails *readPropertiesFromFile(const char *searchTerm = "");
+    int generateId();
     void readPropertiesFromFile(const char *searchTerm = "");
-
-    void writePropertiesToFile(PropertyDetails property);
 
 public:
     Property();

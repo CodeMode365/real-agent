@@ -1,395 +1,294 @@
+#include <cstdio>
+#include <cstring>
+#include <iomanip>
 #include <iostream>
-#include <cstdlib>
-#include <stdio.h>
-#include <string.h>
+#include <sstream>
+#include <string>
 #include "property.h"
 #include "../clients/client.h"
-#include "../utils/screen/screen.h"
 #include "../menu/menu.h"
+#include "../seller/seller.h"
 #include "../utils/files/file.h"
+#include "../utils/screen/screen.h"
 
 using namespace std;
-// Removed for array initialization issue
-/*Property::Property()
-    : properties() // Initialize properties in the initializer list
+
+namespace
 {
-    strcpy(this->fileName, this->fileName);
-}*/
+    bool parsePropertyPipeRecord(const char *line, PropertyDetails &property)
+    {
+        std::stringstream stream(line);
+        std::string id;
+        std::string type;
+        std::string location;
+        std::string price;
+        std::string size;
+        std::string sellerId;
+        std::string status;
+
+        if (!std::getline(stream, id, '|') ||
+            !std::getline(stream, type, '|') ||
+            !std::getline(stream, location, '|') ||
+            !std::getline(stream, price, '|') ||
+            !std::getline(stream, size, '|') ||
+            !std::getline(stream, sellerId, '|') ||
+            !std::getline(stream, status))
+        {
+            return false;
+        }
+
+        property.id = std::atoi(id.c_str());
+        std::strncpy(property.type, type.c_str(), sizeof(property.type) - 1);
+        property.type[sizeof(property.type) - 1] = '\0';
+        std::strncpy(property.location, location.c_str(), sizeof(property.location) - 1);
+        property.location[sizeof(property.location) - 1] = '\0';
+        property.price = std::atof(price.c_str());
+        property.size = std::atoi(size.c_str());
+        property.sellerId = std::atoi(sellerId.c_str());
+        std::strncpy(property.status, status.c_str(), sizeof(property.status) - 1);
+        property.status[sizeof(property.status) - 1] = '\0';
+
+        return property.id > 0;
+    }
+
+    bool readPropertyRecord(FILE *file, PropertyDetails &property)
+    {
+        char line[512] = {};
+        if (!fgets(line, sizeof(line), file))
+        {
+            return false;
+        }
+
+        line[strcspn(line, "\r\n")] = '\0';
+
+        if (strchr(line, '|') != nullptr && parsePropertyPipeRecord(line, property))
+        {
+            return true;
+        }
+
+        return sscanf(line, "%d %49s %99s %f %d %d %19s",
+                      &property.id,
+                      property.type,
+                      property.location,
+                      &property.price,
+                      &property.size,
+                      &property.sellerId,
+                      property.status) == 7;
+    }
+
+    void writePropertyRecord(FILE *file, const PropertyDetails &property)
+    {
+        fprintf(file, "%d|%s|%s|%.2f|%d|%d|%s\n",
+                property.id,
+                property.type,
+                property.location,
+                property.price,
+                property.size,
+                property.sellerId,
+                property.status);
+    }
+
+    void printPropertyHeader()
+    {
+        cout << "\n"
+             << left
+             << setw(8) << "ID"
+             << setw(18) << "Type"
+             << setw(20) << "Location"
+             << setw(14) << "Price"
+             << setw(10) << "Size"
+             << setw(12) << "Seller ID"
+             << setw(12) << "Status" << "\n";
+        cout << string(94, '-') << "\n";
+    }
+
+    void printPropertyRow(const PropertyDetails &property)
+    {
+        cout << left
+             << setw(8) << property.id
+             << setw(18) << property.type
+             << setw(20) << property.location
+             << setw(14) << fixed << setprecision(2) << property.price
+             << setw(10) << property.size
+             << setw(12) << property.sellerId
+             << setw(12) << property.status << "\n";
+    }
+
+    void waitForEnter()
+    {
+        cout << "Press Enter to continue...";
+        cin.ignore();
+        cin.get();
+    }
+}
+
 Property::Property()
 {
     strcpy(this->fileName, "properties.txt");
 }
+
+int Property::generateId()
+{
+    int id = 0;
+    FILE *file = fopen("propertyID.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
+
+    if (file)
+    {
+        fscanf(file, "%d", &id);
+        fclose(file);
+    }
+
+    ++id;
+
+    file = fopen("propertyID.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
+    if (!file)
+    {
+        return -1;
+    }
+
+    fprintf(file, "%d", id);
+    fclose(file);
+    return id;
+}
+
 void Property::readPropertiesFromFile(const char *searchTerm)
 {
-    PropertyDetails property;
-    FILE *file = fopen(this->fileName, "r");
+    PropertyDetails property = {};
+    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
 
-    if (file == nullptr)
+    if (!file)
     {
-        cerr << "Error opening file for reading.\n";
+        cout << "No property records found.\n";
         return;
     }
 
-    cout << "\n┌─────┬──────────────┬──────────────┬───────────────┬──────────┬─────────────────┐────────────┐\n";
-    cout << "│ ID  │     Type     │   Location   │     Price     │   Size   │    Seller ID    │ Status     │\n";
-    cout << "├─────┼──────────────┼──────────────┼───────────────┼──────────┼─────────────────┤────────────┤\n";
-    while (fscanf(file, "%d %s %s %f %d %d %s",
-              &property.id,
-              property.type,
-              property.location,
-              &property.price,
-              &property.size,
-              &property.sellerId,
-              property.status) == 7)
+    printPropertyHeader();
+    bool found = false;
+
+    while (readPropertyRecord(file, property))
     {
-        if ((searchTerm == nullptr || string(searchTerm).empty() || string(property.location) == searchTerm) && string(property.status) == "Available")
+        if (searchTerm == nullptr ||
+            searchTerm[0] == '\0' ||
+            strcmp(searchTerm, "0") == 0 ||
+            strcmp(property.location, searchTerm) == 0)
         {
-            printf("│ %-3d │ %-12s │ %-12s │ Rs. %-9.1f │ %-8d │ %-15d │ %-10s │\n",
-                   property.id,
-                   property.type,
-                   property.location,
-                   property.price,
-                   property.size,
-                   property.sellerId,
-                   property.status);
-        }
-    }/////////////////////////////////////////////////////////////////////////////////////////////////
-cout << "└─────┴──────────────┴──────────────┴───────────────┴──────────┴─────────────────┴────────────┘\n";    // if (searchTerm == nullptr || string(searchTerm).empty() || string(property.location) == searchTerm)
-    // {
-    //     cout << property.id << "\t"
-    //          << property.type << "\t"
-    //          << property.location << "\t"
-    //          << property.price << "\t"
-    //          << property.size << "\t"
-    //          << property.status << "\n";
-    // }
-    fclose(file);
-}
-/*void Property::searchPropertyByRequirements()
-{
-    PropertyDetails property;
-    char location[50];
-    int minArea, maxArea, minPrice, maxPrice;
-    int minSize, maxSize, clientId;
-     cout << "Enter the Client ID to search for properties: ";
-    cin >> clientId;
-    ClientDetails client = Client::getClientById(clientId);
-    if (client.id == 0)
-    {
-        cout << "Client not found.\n";
-        return;
-    }
-    bool foundClient = false;
-    FILE *fp = fopen("clients.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
-     while (fscanf(file, "%d %49s %69s %13s %69s %49s %d %d %d",
-       &client.id,
-       client.name,
-       client.address,
-       client.phone,
-       client.email,
-       client.location,
-       &client.minArea,
-       &client.maxArea,
-       &client.minPrice,
-       &client.maxPrice,
-       &client.sellerId)== 11)
-    {
-        if (client.id == clientId)
-        {
-            foundClient = true;
-            strcpy(location, client.location);
-            minArea = client.minArea;
-            maxArea = client.maxArea;
-            minPrice = client.minPrice;
-            maxPrice = client.maxPrice;
-            minSize = client.minSize;
-            maxSize = client.maxSize;
-            break;
+            found = true;
+            printPropertyRow(property);
         }
     }
 
-    FILE *file = fopen("properties.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
-    if (file == nullptr)
+    if (!found)
     {
-        cerr << "Error opening file for reading.\n";
-        
-    }
-
-    while (fscanf(file, "%d %s %s %f %d %d %s",
-              &property.id,
-              property.type,
-              property.location,
-              &property.price,
-              &property.size,
-              &property.sellerId,
-              property.status) == 7)
-    {
-        bool matches = true;
-
-        if (strcmp(location, "0") != 0 && strcmp(property.location, location) != 0)
-            matches = false;
-        if (minPrice > 0 && property.price < minPrice)
-            matches = false;
-        if (maxPrice > 0 && property.price > maxPrice)
-            matches = false;
-        if (minSize > 0 && property.size < minSize)
-            matches = false;
-        if (maxSize > 0 && property.size > maxSize)
-            matches = false;
-
-        if (matches && string(property.status) == "Available")
-        {
-           fprintf(file,"│ %-3d │ %-12s │ %-12s │ Rs. %-9.1f │ %-8d │ %-15d │ %-10s │\n",
-                   property.id,
-                   property.type,
-                   property.location,
-                   property.price,
-                   property.size,
-                   property.sellerId,
-                   property.status);
-            return;
-        }
+        cout << "No properties matched the current view.\n";
     }
 
     fclose(file);
-    cout << "No properties found matching the requirements.\n";
-    cout << "Press Enter to continue...";
-    cin.ignore();
-    cin.get();
-}*/
-
-void Property::searchPropertyByRequirements()
-{
-    PropertyDetails property;
-    ClientDetails client;
-    char location[50];
-    int minArea, maxArea, clientId;
-    float minPrice, maxPrice;
-
-    cout << "Enter the Client ID to search for properties: ";
-    cin >> clientId;
-
-    bool foundClient = false;
-
-    FILE *fp = fopen("clients.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
-
-    while (fscanf(fp, "%d %49s %69s %13s %69s %49s %d %d %d %d %d",
-                  &client.id,
-                  client.name,
-                  client.address,
-                  client.phone,
-                  client.email,
-                  client.location,
-                  &client.minArea,
-                  &client.maxArea,
-                  &client.minPrice,
-                  &client.maxPrice,
-                  &client.sellerId) == 11)
-    {
-        if (client.id == clientId)
-        {
-            foundClient = true;
-            strcpy(location, client.location);
-            minArea = client.minArea;
-            maxArea = client.maxArea;
-            minPrice = client.minPrice;
-            maxPrice = client.maxPrice;
-            break;
-        }
-    }
-
-    fclose(fp);
-
-    if (!foundClient)
-    {
-        cout << "Client not found.\n";
-        return;
-    }
-
-    FILE *file = fopen("properties.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
-
-    if (file == nullptr)
-    {
-        cerr << "Error opening file for reading.\n";
-        return;
-    }
-
-    while (fscanf(file, "%d %s %s %f %d %d %s",
-                  &property.id,
-                  property.type,
-                  property.location,
-                  &property.price,
-                  &property.size,
-                  &property.sellerId,
-                  property.status) == 7)
-    {
-        bool matches = true;
-
-        if (strcmp(location, "0") != 0 && strcmp(property.location, location) != 0)
-            matches = false;
-
-        if (minPrice > 0 && property.price < minPrice)
-            matches = false;
-
-        if (maxPrice > 0 && property.price > maxPrice)
-            matches = false;
-
-        if (matches && string(property.status) == "Available")
-        {
-            printf("│ %-3d │ %-12s │ %-12s │ Rs. %-9.1f │ %-8d │ %-15d │ %-10s │\n",
-                   property.id,
-                   property.type,
-                   property.location,
-                   property.price,
-                   property.size,
-                   property.sellerId,
-                   property.status);
-        }
-    }
-
-    fclose(file);
-
-    cout << "Press Enter to continue...";
-    cin.ignore();
-    cin.get();
 }
 
 PropertyDetails Property::getPropertyById(int id)
 {
-    PropertyDetails property;
+    PropertyDetails property = {};
     FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
 
-    if (file == nullptr)
+    if (!file)
     {
-        cerr << "Error opening file for reading.\n";
-        return property; // Return empty property on error
+        return property;
     }
 
-    while (fscanf(file, "%d %s %s %f %d %d %s",
-              &property.id,
-              property.type,
-              property.location,
-              &property.price,
-              &property.size,
-              &property.sellerId,
-              property.status) == 7)
+    while (readPropertyRecord(file, property))
     {
         if (property.id == id)
         {
             fclose(file);
-            return property; // Return the found property
+            return property;
         }
     }
+
     fclose(file);
-    return property; // Return empty property if not found
+    property.id = 0;
+    return property;
 }
 
 void Property::addProperty()
 {
-    
     Screen::clearScreen();
-    add:
     Screen::printHeader("Add New Property");
-    
-    PropertyDetails newProperty;
 
-    cout << "Enter Property ID: ";
-    cin >> newProperty.id;
-    cout << "Enter Property Type: ";
-    cin >> newProperty.type;
-    cout << "Enter Location: ";
-    cin >> newProperty.location;
-    cout << "Enter Price: ";
-    cin >> newProperty.price;
-    cout << "Enter Size (in sqft): ";
-    cin >> newProperty.size;
-    strcpy(newProperty.status, "Available");
-    if(cin.fail()){
-        Screen::invalidInput();
-        Screen::clearScreen();
-        cout << "Invalid input! Please try again.\n";
-        goto add;
-    }
+    PropertyDetails property = {};
+    property.id = generateId();
 
-    // FILE *file = fopen(this->fileName, "a");
-    FILE *original = fopen(this->fileName, "r");
-    FILE *temp = fopen("temp.txt", "w");
-
-    if (!temp)
+    if (property.id < 0)
     {
-        cerr << "Error opening temp file.\n";
-        if (original)
-            fclose(original);
+        cout << "Unable to generate property ID.\n";
         return;
     }
 
-    // Write new content first in temporary file
-    fprintf(temp, "%d %s %s %.2f %d %d %s\n",
-        newProperty.id,
-        newProperty.type,
-        newProperty.location,
-        newProperty.price,
-        newProperty.size,
-        newProperty.sellerId,
-        newProperty.status);
+    cout << "Property ID: " << property.id << "\n";
+    cout << "Enter Property Type: ";
+    cin >> ws;
+    cin.getline(property.type, sizeof(property.type));
+    cout << "Enter Location: ";
+    cin.getline(property.location, sizeof(property.location));
+    cout << "Enter Price: ";
+    cin >> property.price;
+    cout << "Enter Size (in sqft): ";
+    cin >> property.size;
+    cout << "Enter Seller ID: ";
+    cin >> property.sellerId;
 
-    // Copy old data after
-    if (original)
+    Seller seller;
+    if (seller.getSellerById(property.sellerId).id == 0)
     {
-        char buffer[1024];
-        while (fgets(buffer, sizeof(buffer), original))
-        {
-            fputs(buffer, temp);
-        }
-        fclose(original);
+        cout << "Seller ID not found. Add the seller first.\n";
+        return;
     }
 
-    fclose(temp);
+    strcpy(property.status, "Available");
 
-    // Replace original file with temp file
-    remove(this->fileName);
-    rename("temp.txt", this->fileName);
+    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::APPEND));
+    if (!file)
+    {
+        cout << "Error opening file.\n";
+        return;
+    }
+
+    writePropertyRecord(file, property);
+    fclose(file);
 
     cout << "Property added successfully!\n";
 }
 
 void Property::deletePropertyById(int id)
 {
-    FILE *file = fopen(this->fileName, "r");
-    FILE *temp = fopen("temp.txt", "w");
+    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    FILE *temp = fopen("temp.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
 
-    if (file == nullptr || temp == nullptr)
+    if (!file || !temp)
     {
         cerr << "Error opening file.\n";
-        if (file) fclose(file);
-        if (temp) fclose(temp);
+        if (file)
+        {
+            fclose(file);
+        }
+        if (temp)
+        {
+            fclose(temp);
+        }
         return;
     }
 
-    PropertyDetails property;
+    PropertyDetails property = {};
     bool found = false;
 
-    while (fscanf(file, "%d %s %s %f %d %d %s",
-              &property.id,
-              property.type,
-              property.location,
-              &property.price,
-              &property.size,
-              &property.sellerId,
-              property.status) == 7)
+    while (readPropertyRecord(file, property))
     {
         if (property.id == id)
         {
             found = true;
             continue;
         }
-        fprintf(temp, "%d %s %s %.2f %d %s\n",
-                property.id,
-                property.type,
-                property.location,
-                property.price,
-                property.size,
-                property.status);
+
+        writePropertyRecord(temp, property);
     }
 
     fclose(file);
@@ -398,65 +297,63 @@ void Property::deletePropertyById(int id)
     remove(this->fileName);
     rename("temp.txt", this->fileName);
 
-    if (found)
-    {
-        cout << "Property deleted successfully!\n";
-    }
-    else
-    {
-        cout << "Property ID not found!\n";
-    }
-    cout << "Press Enter to continue...";
-    cin.ignore();
-    cin.get();
+    cout << (found ? "Property deleted successfully!\n" : "Property ID not found!\n");
+    waitForEnter();
 }
 
 void Property::updatePropertyById(int id)
 {
-    FILE *file = fopen(this->fileName, "r");
-    FILE *temp = fopen("temp.txt", "w");
+    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    FILE *temp = fopen("temp.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
 
-    if (file == nullptr || temp == nullptr)
+    if (!file || !temp)
     {
         cerr << "Error opening file.\n";
-        if (file) fclose(file);
-        if (temp) fclose(temp);
+        if (file)
+        {
+            fclose(file);
+        }
+        if (temp)
+        {
+            fclose(temp);
+        }
         return;
     }
 
-    PropertyDetails property;
+    PropertyDetails property = {};
     bool found = false;
 
-    while (fscanf(file, "%d %s %s %f %d %d %s",
-              &property.id,
-              property.type,
-              property.location,
-              &property.price,
-              &property.size,
-              &property.sellerId,
-              property.status) == 7)
+    while (readPropertyRecord(file, property))
     {
         if (property.id == id)
         {
             found = true;
+            const int currentSellerId = property.sellerId;
             cout << "Enter New Property Type (Current: " << property.type << "): ";
-            cin >> property.type;
+            cin >> ws;
+            cin.getline(property.type, sizeof(property.type));
             cout << "Enter New Location (Current: " << property.location << "): ";
-            cin >> property.location;
+            cin.getline(property.location, sizeof(property.location));
             cout << "Enter New Price (Current: " << property.price << "): ";
             cin >> property.price;
             cout << "Enter New Size (Current: " << property.size << "): ";
             cin >> property.size;
-            // Status kept as Available as per Add logic
-            strcpy(property.status, "Available");
+            cout << "Enter New Seller ID (Current: " << property.sellerId << "): ";
+            cin >> property.sellerId;
+
+            Seller seller;
+            if (seller.getSellerById(property.sellerId).id == 0)
+            {
+                cout << "Seller ID not found. Keeping the existing seller link.\n";
+                property.sellerId = currentSellerId;
+            }
+
+            cout << "Enter New Status (Available/Sold, Current: " << property.status << "): ";
+            cin >> ws;
+            cin.getline(property.status, sizeof(property.status));
         }
-        fprintf(temp, "%d %s %s %.2f %d %s\n",
-                property.id,
-                property.type,
-                property.location,
-                property.price,
-                property.size,
-                property.status);
+
+        writePropertyRecord(temp, property);
     }
 
     fclose(file);
@@ -465,83 +362,157 @@ void Property::updatePropertyById(int id)
     remove(this->fileName);
     rename("temp.txt", this->fileName);
 
-    if (found)
-    {
-        cout << "Property updated successfully!\n";
-    }
-    else
-    {
-        cout << "Property ID not found!\n";
-    }
-    cout << "Press Enter to continue...";
-    cin.ignore();
-    cin.get();
+    cout << (found ? "Property updated successfully!\n" : "Property ID not found!\n");
+    waitForEnter();
 }
 
 void Property::viewProperties()
 {
-    int choice;
+    int choice = 0;
+
     do
     {
         Screen::clearScreen();
         Screen::printHeader("View Properties");
+        readPropertiesFromFile();
 
-        this->readPropertiesFromFile(nullptr);
-
-        cout << "\nChoose an option:\n";
-        cout << "1. Delete Property by ID\n";
-        cout << "2. Update Property details\n";
-        cout << "3. Back to Property Menu\n";
+        cout << "\n1. Delete Property by ID\n";
+        cout << "2. Update Property by ID\n";
+        cout << "3. Back\n";
         cout << "Enter choice: ";
         cin >> choice;
 
-        if (choice == 3) break;
-
-        int id;
-        switch (choice)
+        if (choice == 1)
         {
-        case 1:
+            int id = 0;
             cout << "Enter Property ID to delete: ";
             cin >> id;
-            this->deletePropertyById(id);
-            break;
-        case 2:
+            deletePropertyById(id);
+        }
+        else if (choice == 2)
+        {
+            int id = 0;
             cout << "Enter Property ID to update: ";
             cin >> id;
-            this->updatePropertyById(id);
-            break;
-        default:
-            cout << "Invalid choice!\n";
-            cin.ignore();
-            cin.get();
-            break;
+            updatePropertyById(id);
         }
-    } while (true);
+        else if (choice != 3)
+        {
+            cout << "Invalid choice!\n";
+            waitForEnter();
+        }
+    } while (choice != 3);
+}
+
+void Property::searchPropertyByRequirements()
+{
+    Client clientManager;
+    int clientId = 0;
+
+    Screen::clearScreen();
+    Screen::printHeader("Search Property For Client");
+    cout << "Enter Client ID: ";
+    cin >> clientId;
+
+    ClientDetails client = clientManager.getClientById(clientId);
+    if (client.id == 0)
+    {
+        cout << "Client not found.\n";
+        waitForEnter();
+        return;
+    }
+
+    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    if (!file)
+    {
+        cout << "No property records found.\n";
+        waitForEnter();
+        return;
+    }
+
+    PropertyDetails property = {};
+    bool found = false;
+
+    printPropertyHeader();
+
+    while (readPropertyRecord(file, property))
+    {
+        bool matches = strcmp(property.status, "Available") == 0;
+
+        if (matches && strcmp(client.location, "0") != 0 && strcmp(client.location, property.location) != 0)
+        {
+            matches = false;
+        }
+        if (matches && client.minArea > 0 && property.size < client.minArea)
+        {
+            matches = false;
+        }
+        if (matches && client.maxArea > 0 && property.size > client.maxArea)
+        {
+            matches = false;
+        }
+        if (matches && client.minPrice > 0 && property.price < client.minPrice)
+        {
+            matches = false;
+        }
+        if (matches && client.maxPrice > 0 && property.price > client.maxPrice)
+        {
+            matches = false;
+        }
+        if (matches && client.sellerId > 0 && property.sellerId != client.sellerId)
+        {
+            matches = false;
+        }
+
+        if (matches)
+        {
+            found = true;
+            printPropertyRow(property);
+        }
+    }
+
+    fclose(file);
+
+    if (!found)
+    {
+        cout << "No available properties matched the client requirements.\n";
+    }
+
+    waitForEnter();
 }
 
 void Property::menu()
 {
-    int choice;
-    Screen::clearScreen();
-    Screen::printHeader("Property Menu");
-    cout << "1. Add Property\n";
-    cout << "2. View Properties\n";
-    cout << "3. Back to Main Menu\n";
-    cin >> choice;
+    int choice = 0;
 
-    switch (choice)
+    do
     {
-    case 1:
-        this->addProperty();
-        break;
-    case 2:
-        this->viewProperties();
-        break;
-    case 3:
-        Menu::showMenu();
-        break;
-    default:
-        cout << "Invalid choice. Please try again.\n";
-        break;
-    }
+        Screen::clearScreen();
+        Screen::printHeader("Property Menu");
+        cout << "1. Add Property\n";
+        cout << "2. View Properties\n";
+        cout << "3. Search by Client Requirements\n";
+        cout << "4. Back to Main Menu\n";
+        cout << "Enter choice: ";
+        cin >> choice;
+
+        if (choice == 1)
+        {
+            addProperty();
+            waitForEnter();
+        }
+        else if (choice == 2)
+        {
+            viewProperties();
+        }
+        else if (choice == 3)
+        {
+            searchPropertyByRequirements();
+        }
+        else if (choice != 4)
+        {
+            cout << "Invalid choice. Please try again.\n";
+            waitForEnter();
+        }
+    } while (choice != 4);
 }
