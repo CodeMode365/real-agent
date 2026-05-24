@@ -1,10 +1,8 @@
 #include "file.h"
-#include <string>
 
 namespace FileUtils
 {
-
-    char *getFileModeString(FileMode mode)
+    const char *getFileModeString(FileMode mode)
     {
         switch (mode)
         {
@@ -24,5 +22,4 @@ namespace FileUtils
             return "r";
         }
     }
-
 }

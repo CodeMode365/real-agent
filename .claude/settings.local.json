@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls *)",
+      "Bash(find \"\\\\\\\\wsl.localhost\\\\Ubuntu\\\\home\\\\pabin\\\\college\\\\real-agent\\\\src\" -type f)",
+      "Bash(wc -c \"\\\\\\\\wsl.localhost\\\\Ubuntu\\\\home\\\\pabin\\\\college\\\\real-agent\\\\src\\\\utils\\\\user\\\\user.cpp\")",
+      "Bash(TARGET)",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd /home/pabin/college/real-agent && make clean && make $\\(TARGET\\) 2>&1\")",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd /home/pabin/college/real-agent && make build/Debug/outDebug 2>&1\")",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd /home/pabin/college/real-agent && printf 'admin\\\\n1234\\\\n2\\\\n1\\\\n\\\\n\\\\n\\\\n3\\\\n3\\\\n5\\\\n' | ./build/Debug/outDebug 2>&1 | tail -80\")",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd /home/pabin/college/real-agent && cat sellers.txt\")",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd /home/pabin/college/real-agent && printf 'admin\\\\n1234\\\\n2\\\\n2\\\\n2\\\\n2\\\\nRamesh\\\\n\\\\n  Bhaktapur  \\\\n3\\\\n3\\\\n5\\\\n' | ./build/Debug/outDebug 2>&1 | tail -120\")",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd /home/pabin/college/real-agent && printf 'admin\\\\n1234\\\\n2\\\\n2\\\\n2\\\\n2\\\\nRamesh\\\\n\\\\n  Bhaktapur  \\\\n3\\\\n3\\\\n5\\\\n' | ./build/Debug/outDebug | tail -120\")",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd /home/pabin/college/real-agent && printf 'admin\\\\n1234\\\\n2\\\\n2\\\\n2\\\\n2\\\\nRamesh\\\\n\\\\n  Bhaktapur  \\\\n3\\\\n3\\\\n5\\\\n' | ./build/Debug/outDebug > /tmp/out.txt 2>&1; tail -100 /tmp/out.txt\")",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd /home/pabin/college/real-agent && printf 'admin\\\\n1234\\\\n2\\\\n2\\\\n3\\\\n3\\\\n5\\\\n' | ./build/Debug/outDebug > /tmp/out.log 2>&1; cat /tmp/out.log\")",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd /home/pabin/college/real-agent && make build/Debug/outDebug 2>&1 && make test 2>&1\")",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd /home/pabin/college/real-agent && make test 2>&1\")"
+    ]
+  }
+}

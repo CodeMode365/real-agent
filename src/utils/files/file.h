@@ -1,5 +1,3 @@
-#include <string>
-
 #pragma once
 
 namespace FileUtils
@@ -14,6 +12,5 @@ namespace FileUtils
         APPEND_READ,
     };
 
-    char *getFileModeString(FileMode mode);
-
+    const char *getFileModeString(FileMode mode);
 }

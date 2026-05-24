@@ -1,6 +1,5 @@
 #include <cstdio>
 #include <cstring>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -9,13 +8,14 @@
 #include "../menu/menu.h"
 #include "../seller/seller.h"
 #include "../utils/files/file.h"
+#include "../utils/input/input.h"
 #include "../utils/screen/screen.h"
 
 using namespace std;
 
 namespace
 {
-    bool parsePropertyPipeRecord(const char *line, PropertyDetails &property)
+    bool parsePropertyRecord(const char *line, PropertyDetails &property)
     {
         std::stringstream stream(line);
         std::string id;
@@ -38,15 +38,12 @@ namespace
         }
 
         property.id = std::atoi(id.c_str());
-        std::strncpy(property.type, type.c_str(), sizeof(property.type) - 1);
-        property.type[sizeof(property.type) - 1] = '\0';
-        std::strncpy(property.location, location.c_str(), sizeof(property.location) - 1);
-        property.location[sizeof(property.location) - 1] = '\0';
-        property.price = std::atof(price.c_str());
+        Input::copyTo(property.type, sizeof(property.type), type);
+        Input::copyTo(property.location, sizeof(property.location), location);
+        property.price = static_cast<float>(std::atof(price.c_str()));
         property.size = std::atoi(size.c_str());
         property.sellerId = std::atoi(sellerId.c_str());
-        std::strncpy(property.status, status.c_str(), sizeof(property.status) - 1);
-        property.status[sizeof(property.status) - 1] = '\0';
+        Input::copyTo(property.status, sizeof(property.status), status);
 
         return property.id > 0;
     }
@@ -61,19 +58,13 @@ namespace
 
         line[strcspn(line, "\r\n")] = '\0';
 
-        if (strchr(line, '|') != nullptr && parsePropertyPipeRecord(line, property))
+        if (line[0] == '\0')
         {
+            property = {};
             return true;
         }
 
-        return sscanf(line, "%d %49s %99s %f %d %d %19s",
-                      &property.id,
-                      property.type,
-                      property.location,
-                      &property.price,
-                      &property.size,
-                      &property.sellerId,
-                      property.status) == 7;
+        return parsePropertyRecord(line, property);
     }
 
     void writePropertyRecord(FILE *file, const PropertyDetails &property)
@@ -88,37 +79,23 @@ namespace
                 property.status);
     }
 
-    void printPropertyHeader()
+    void printProperty(const PropertyDetails &property)
     {
-        cout << "\n"
-             << left
-             << setw(8) << "ID"
-             << setw(18) << "Type"
-             << setw(20) << "Location"
-             << setw(14) << "Price"
-             << setw(10) << "Size"
-             << setw(12) << "Seller ID"
-             << setw(12) << "Status" << "\n";
-        cout << string(94, '-') << "\n";
-    }
+        Screen::beginRecord();
+        Screen::printKeyValue("ID", std::to_string(property.id));
+        Screen::printKeyValue("Type", property.type);
+        Screen::printKeyValue("Location", property.location);
 
-    void printPropertyRow(const PropertyDetails &property)
-    {
-        cout << left
-             << setw(8) << property.id
-             << setw(18) << property.type
-             << setw(20) << property.location
-             << setw(14) << fixed << setprecision(2) << property.price
-             << setw(10) << property.size
-             << setw(12) << property.sellerId
-             << setw(12) << property.status << "\n";
-    }
+        std::ostringstream price;
+        price.setf(std::ios::fixed);
+        price.precision(2);
+        price << property.price;
+        Screen::printKeyValue("Price", price.str());
 
-    void waitForEnter()
-    {
-        cout << "Press Enter to continue...";
-        cin.ignore();
-        cin.get();
+        Screen::printKeyValue("Size (sqft)", std::to_string(property.size));
+        Screen::printKeyValue("Seller ID", std::to_string(property.sellerId));
+        Screen::printKeyValue("Status", property.status);
+        Screen::endRecord();
     }
 }
 
@@ -134,7 +111,10 @@ int Property::generateId()
 
     if (file)
     {
-        fscanf(file, "%d", &id);
+        if (fscanf(file, "%d", &id) != 1)
+        {
+            id = 0;
+        }
         fclose(file);
     }
 
@@ -162,18 +142,22 @@ void Property::readPropertiesFromFile(const char *searchTerm)
         return;
     }
 
-    printPropertyHeader();
     bool found = false;
 
     while (readPropertyRecord(file, property))
     {
+        if (property.id == 0)
+        {
+            continue;
+        }
         if (searchTerm == nullptr ||
             searchTerm[0] == '\0' ||
             strcmp(searchTerm, "0") == 0 ||
+            strcmp(searchTerm, Input::NA.c_str()) == 0 ||
             strcmp(property.location, searchTerm) == 0)
         {
             found = true;
-            printPropertyRow(property);
+            printProperty(property);
         }
     }
 
@@ -224,26 +208,23 @@ void Property::addProperty()
     }
 
     cout << "Property ID: " << property.id << "\n";
-    cout << "Enter Property Type: ";
-    cin >> ws;
-    cin.getline(property.type, sizeof(property.type));
-    cout << "Enter Location: ";
-    cin.getline(property.location, sizeof(property.location));
-    cout << "Enter Price: ";
-    cin >> property.price;
-    cout << "Enter Size (in sqft): ";
-    cin >> property.size;
-    cout << "Enter Seller ID: ";
-    cin >> property.sellerId;
+
+    Input::copyTo(property.type, sizeof(property.type),
+                  Input::readString("Enter Property Type: "));
+    Input::copyTo(property.location, sizeof(property.location),
+                  Input::readString("Enter Location: "));
+    property.price = Input::readFloat("Enter Price: ");
+    property.size = Input::readInt("Enter Size (in sqft): ");
+    property.sellerId = Input::readInt("Enter Seller ID: ");
 
     Seller seller;
-    if (seller.getSellerById(property.sellerId).id == 0)
+    if (property.sellerId <= 0 || seller.getSellerById(property.sellerId).id == 0)
     {
         cout << "Seller ID not found. Add the seller first.\n";
         return;
     }
 
-    strcpy(property.status, "Available");
+    Input::copyTo(property.status, sizeof(property.status), "Available");
 
     FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::APPEND));
     if (!file)
@@ -282,6 +263,10 @@ void Property::deletePropertyById(int id)
 
     while (readPropertyRecord(file, property))
     {
+        if (property.id == 0)
+        {
+            continue;
+        }
         if (property.id == id)
         {
             found = true;
@@ -298,7 +283,7 @@ void Property::deletePropertyById(int id)
     rename("temp.txt", this->fileName);
 
     cout << (found ? "Property deleted successfully!\n" : "Property ID not found!\n");
-    waitForEnter();
+    Input::waitForEnter();
 }
 
 void Property::updatePropertyById(int id)
@@ -325,32 +310,46 @@ void Property::updatePropertyById(int id)
 
     while (readPropertyRecord(file, property))
     {
+        if (property.id == 0)
+        {
+            continue;
+        }
         if (property.id == id)
         {
             found = true;
             const int currentSellerId = property.sellerId;
-            cout << "Enter New Property Type (Current: " << property.type << "): ";
-            cin >> ws;
-            cin.getline(property.type, sizeof(property.type));
-            cout << "Enter New Location (Current: " << property.location << "): ";
-            cin.getline(property.location, sizeof(property.location));
-            cout << "Enter New Price (Current: " << property.price << "): ";
-            cin >> property.price;
-            cout << "Enter New Size (Current: " << property.size << "): ";
-            cin >> property.size;
-            cout << "Enter New Seller ID (Current: " << property.sellerId << "): ";
-            cin >> property.sellerId;
+
+            const std::string type = Input::readString(
+                std::string("Enter New Property Type (Current: ") + property.type + "): ",
+                property.type);
+            Input::copyTo(property.type, sizeof(property.type), type);
+
+            const std::string location = Input::readString(
+                std::string("Enter New Location (Current: ") + property.location + "): ",
+                property.location);
+            Input::copyTo(property.location, sizeof(property.location), location);
+
+            property.price = Input::readFloat(
+                std::string("Enter New Price (Current: ") + std::to_string(property.price) + "): ",
+                property.price);
+            property.size = Input::readInt(
+                std::string("Enter New Size (Current: ") + std::to_string(property.size) + "): ",
+                property.size);
+            property.sellerId = Input::readInt(
+                std::string("Enter New Seller ID (Current: ") + std::to_string(property.sellerId) + "): ",
+                property.sellerId);
 
             Seller seller;
-            if (seller.getSellerById(property.sellerId).id == 0)
+            if (property.sellerId <= 0 || seller.getSellerById(property.sellerId).id == 0)
             {
                 cout << "Seller ID not found. Keeping the existing seller link.\n";
                 property.sellerId = currentSellerId;
             }
 
-            cout << "Enter New Status (Available/Sold, Current: " << property.status << "): ";
-            cin >> ws;
-            cin.getline(property.status, sizeof(property.status));
+            const std::string status = Input::readString(
+                std::string("Enter New Status (Available/Sold, Current: ") + property.status + "): ",
+                property.status);
+            Input::copyTo(property.status, sizeof(property.status), status);
         }
 
         writePropertyRecord(temp, property);
@@ -363,7 +362,7 @@ void Property::updatePropertyById(int id)
     rename("temp.txt", this->fileName);
 
     cout << (found ? "Property updated successfully!\n" : "Property ID not found!\n");
-    waitForEnter();
+    Input::waitForEnter();
 }
 
 void Property::viewProperties()
@@ -379,27 +378,22 @@ void Property::viewProperties()
         cout << "\n1. Delete Property by ID\n";
         cout << "2. Update Property by ID\n";
         cout << "3. Back\n";
-        cout << "Enter choice: ";
-        cin >> choice;
+        choice = Input::readChoice("Enter choice: ");
 
         if (choice == 1)
         {
-            int id = 0;
-            cout << "Enter Property ID to delete: ";
-            cin >> id;
+            const int id = Input::readInt("Enter Property ID to delete: ");
             deletePropertyById(id);
         }
         else if (choice == 2)
         {
-            int id = 0;
-            cout << "Enter Property ID to update: ";
-            cin >> id;
+            const int id = Input::readInt("Enter Property ID to update: ");
             updatePropertyById(id);
         }
         else if (choice != 3)
         {
             cout << "Invalid choice!\n";
-            waitForEnter();
+            Input::waitForEnter();
         }
     } while (choice != 3);
 }
@@ -407,18 +401,16 @@ void Property::viewProperties()
 void Property::searchPropertyByRequirements()
 {
     Client clientManager;
-    int clientId = 0;
 
     Screen::clearScreen();
     Screen::printHeader("Search Property For Client");
-    cout << "Enter Client ID: ";
-    cin >> clientId;
+    const int clientId = Input::readInt("Enter Client ID: ");
 
     ClientDetails client = clientManager.getClientById(clientId);
     if (client.id == 0)
     {
         cout << "Client not found.\n";
-        waitForEnter();
+        Input::waitForEnter();
         return;
     }
 
@@ -426,20 +418,24 @@ void Property::searchPropertyByRequirements()
     if (!file)
     {
         cout << "No property records found.\n";
-        waitForEnter();
+        Input::waitForEnter();
         return;
     }
 
     PropertyDetails property = {};
     bool found = false;
 
-    printPropertyHeader();
-
     while (readPropertyRecord(file, property))
     {
+        if (property.id == 0)
+        {
+            continue;
+        }
         bool matches = strcmp(property.status, "Available") == 0;
 
-        if (matches && strcmp(client.location, "0") != 0 && strcmp(client.location, property.location) != 0)
+        const bool anyLocation = strcmp(client.location, "0") == 0 ||
+                                 strcmp(client.location, Input::NA.c_str()) == 0;
+        if (matches && !anyLocation && strcmp(client.location, property.location) != 0)
         {
             matches = false;
         }
@@ -467,7 +463,7 @@ void Property::searchPropertyByRequirements()
         if (matches)
         {
             found = true;
-            printPropertyRow(property);
+            printProperty(property);
         }
     }
 
@@ -478,7 +474,7 @@ void Property::searchPropertyByRequirements()
         cout << "No available properties matched the client requirements.\n";
     }
 
-    waitForEnter();
+    Input::waitForEnter();
 }
 
 void Property::menu()
@@ -493,13 +489,12 @@ void Property::menu()
         cout << "2. View Properties\n";
         cout << "3. Search by Client Requirements\n";
         cout << "4. Back to Main Menu\n";
-        cout << "Enter choice: ";
-        cin >> choice;
+        choice = Input::readChoice("Enter choice: ");
 
         if (choice == 1)
         {
             addProperty();
-            waitForEnter();
+            Input::waitForEnter();
         }
         else if (choice == 2)
         {
@@ -512,7 +507,7 @@ void Property::menu()
         else if (choice != 4)
         {
             cout << "Invalid choice. Please try again.\n";
-            waitForEnter();
+            Input::waitForEnter();
         }
     } while (choice != 4);
 }

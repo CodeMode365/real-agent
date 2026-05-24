@@ -1,43 +1,68 @@
 #include "screen.h"
-#include <iostream>
+#include <algorithm>
 #include <cstdlib>
+#include <iomanip>
+#include <iostream>
 #include <limits>
 #include <unistd.h>
 
-
-
 namespace Screen
 {
-        void invalidInput()
-        {
-                usleep(300000);
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
-        }
-       void clearScreen()
-        {
-#if defined(_WIN32)|| defined(_WIN64)
-                system("cls");
+    namespace
+    {
+        constexpr int RECORD_WIDTH = 50;
+        constexpr int KEY_WIDTH = 16;
+    }
+
+    void invalidInput()
+    {
+        usleep(300000);
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+
+    void clearScreen()
+    {
+#if defined(_WIN32) || defined(_WIN64)
+        std::system("cls");
 #else
-                system("clear");
+        std::system("clear");
 #endif
-                std::cout << "\033[2J\033[H";	
-        }
+        std::cout << "\033[2J\033[H";
+    }
 
-        void printHeader(const std::string &title)
-        {
-                //clearScreen();
-                int totalWidth = std::max(40, static_cast<int>(title.length()) + 4); // 2 for borders, 2 for padding
-                int contentWidth = totalWidth - 2;                                   // exclude borders
-                int padding = contentWidth - static_cast<int>(title.length());
-                int leftPad = padding / 2;
-                int rightPad = padding - leftPad;
-                std::cout << "╔" << std::string(contentWidth, '=') << "╗\n";
-                std::cout << "║" << std::string(leftPad, ' ') << title << std::string(rightPad, ' ') << "║\n";
-                std::cout << "╚" << std::string(contentWidth, '=') << "╝\n";
+    void printHeader(const std::string &title)
+    {
+        const int totalWidth = std::max(40, static_cast<int>(title.length()) + 4);
+        const int contentWidth = totalWidth - 2;
+        const int padding = contentWidth - static_cast<int>(title.length());
+        const int leftPad = padding / 2;
+        const int rightPad = padding - leftPad;
 
-                // std::cout << "╔" << std::string(contentWidth, '═') << "╗\n";
-                // std::cout << "║" << std::string(leftPad, ' ') << title << std::string(rightPad, ' ') << "║\n";
-                // std::cout << "╚" << std::string(contentWidth, '═') << "╝\n";
-        }
+        std::cout << "+" << std::string(contentWidth, '=') << "+\n";
+        std::cout << "|" << std::string(leftPad, ' ') << title
+                  << std::string(rightPad, ' ') << "|\n";
+        std::cout << "+" << std::string(contentWidth, '=') << "+\n";
+    }
+
+    void printRecordSeparator()
+    {
+        std::cout << std::string(RECORD_WIDTH, '-') << "\n";
+    }
+
+    void beginRecord()
+    {
+        printRecordSeparator();
+    }
+
+    void endRecord()
+    {
+        printRecordSeparator();
+    }
+
+    void printKeyValue(const std::string &key, const std::string &value)
+    {
+        std::cout << std::left << std::setw(KEY_WIDTH)
+                  << (key + ":") << value << "\n";
+    }
 }

@@ -1,13 +1,9 @@
 #include <iostream>
-#include <limits>
-#include <cstdlib>
-#include <stdlib.h>
-#include <stdio.h>
 #include "../admin/admin.h"
 #include "../property/property.h"
+#include "../utils/input/input.h"
 #include "../utils/screen/screen.h"
 #include "../clients/client.h"
-#include "../utils/user/user.h"
 #include "../seller/seller.h"
 #include "menu.h"
 
@@ -15,37 +11,13 @@ using namespace std;
 
 namespace Menu
 {
-    /*void befMenu(int userType){
-        switch(userType)
-        {
-            case 1:{
-                Admin admin;
-                while(admin.login()){
-                    Screen::clearScreen();
-                    cout << "Login successful!\n";
-                    Menu::runMenu();
-                    break;
-                }}
-                break;
-            case 2:
-                cout<<"Seller menu\n";
-                break;
-            case 3:
-                cout<<"Client menu\n";
-                break;
-            default:
-                cout<<"Invalid user type\n";
-        }
-    }*/
     void runMenu()
     {
         Admin admin;
 
-        // Login validation
         while (!admin.login())
         {
-        	Screen::clearScreen();
-            Screen::invalidInput();
+            Screen::clearScreen();
             cout << "Invalid login! Try again.\n";
         }
         Screen::clearScreen();
@@ -55,26 +27,21 @@ namespace Menu
         showMenu();
     }
 
-    
     int showMenu()
     {
-        int choice;
+        int choice = 0;
         Property property;
 
         do
         {
             Screen::clearScreen();
             Screen::printHeader("Main Menu");
-            cout << "\n----- MAIN MENU -----\n";
             cout << "1. Property Menu\n";
             cout << "2. Seller Menu\n";
             cout << "3. Client Menu\n";
             cout << "4. Search Property for Client\n";
             cout << "5. Logout\n";
-            cout << "Enter choice: ";
-            cin >>choice;
-
-            // User *user; // Base class pointer (Polymorphism)
+            choice = Input::readChoice("Enter choice: ");
 
             switch (choice)
             {
@@ -104,10 +71,9 @@ namespace Menu
                 return 0;
 
             default:
-			Screen::clearScreen();
-                Screen::invalidInput();
+                Screen::clearScreen();
                 cout << "Invalid choice!\n";
-                
+                Input::waitForEnter();
                 break;
             }
         } while (true);

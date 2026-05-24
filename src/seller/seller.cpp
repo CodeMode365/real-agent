@@ -1,16 +1,42 @@
 #include <cstdio>
 #include <cstring>
-#include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <string>
 #include "seller.h"
 #include "../menu/menu.h"
 #include "../utils/files/file.h"
+#include "../utils/input/input.h"
 #include "../utils/screen/screen.h"
 
 using namespace std;
 
 namespace
 {
+    bool parseSellerRecord(const char *line, SellerDetails &seller)
+    {
+        std::stringstream stream(line);
+        std::string id;
+        std::string name;
+        std::string contact;
+        std::string address;
+
+        if (!std::getline(stream, id, '|') ||
+            !std::getline(stream, name, '|') ||
+            !std::getline(stream, contact, '|') ||
+            !std::getline(stream, address))
+        {
+            return false;
+        }
+
+        seller.id = std::atoi(id.c_str());
+        Input::copyTo(seller.name, sizeof(seller.name), name);
+        Input::copyTo(seller.contact, sizeof(seller.contact), contact);
+        Input::copyTo(seller.address, sizeof(seller.address), address);
+
+        return seller.id > 0;
+    }
+
     bool readSellerRecord(FILE *file, SellerDetails &seller)
     {
         char line[512] = {};
@@ -19,20 +45,15 @@ namespace
             return false;
         }
 
-        if (sscanf(line, "%d|%99[^|]|%49[^|]|%149[^\n]",
-                   &seller.id,
-                   seller.name,
-                   seller.contact,
-                   seller.address) == 4)
+        line[strcspn(line, "\r\n")] = '\0';
+
+        if (line[0] == '\0')
         {
+            seller = {};
             return true;
         }
 
-        return sscanf(line, "%d %99s %49s %149s",
-                      &seller.id,
-                      seller.name,
-                      seller.contact,
-                      seller.address) == 4;
+        return parseSellerRecord(line, seller);
     }
 
     void writeSellerRecord(FILE *file, const SellerDetails &seller)
@@ -44,11 +65,14 @@ namespace
                 seller.address);
     }
 
-    void waitForEnter()
+    void printSeller(const SellerDetails &seller)
     {
-        cout << "Press Enter to continue...";
-        cin.ignore();
-        cin.get();
+        Screen::beginRecord();
+        Screen::printKeyValue("ID", std::to_string(seller.id));
+        Screen::printKeyValue("Name", seller.name);
+        Screen::printKeyValue("Contact", seller.contact);
+        Screen::printKeyValue("Address", seller.address);
+        Screen::endRecord();
     }
 }
 
@@ -64,7 +88,10 @@ int Seller::generateId()
 
     if (file)
     {
-        fscanf(file, "%d", &id);
+        if (fscanf(file, "%d", &id) != 1)
+        {
+            id = 0;
+        }
         fclose(file);
     }
 
@@ -92,27 +119,30 @@ bool Seller::sellerHasProperties(int id)
     char line[512] = {};
     while (fgets(line, sizeof(line), file))
     {
-        int propertyId = 0;
-        char type[50] = {};
-        char location[100] = {};
-        float price = 0;
-        int size = 0;
-        int sellerId = 0;
-        char status[20] = {};
-
-        if (sscanf(line, "%d|%49[^|]|%99[^|]|%f|%d|%d|%19[^\n]",
-                   &propertyId,
-                   type,
-                   location,
-                   &price,
-                   &size,
-                   &sellerId,
-                   status) != 7)
+        line[strcspn(line, "\r\n")] = '\0';
+        if (line[0] == '\0')
         {
             continue;
         }
 
-        if (sellerId == id)
+        std::stringstream stream(line);
+        std::string field;
+        int column = 0;
+        int sellerId = 0;
+        bool parsed = false;
+
+        while (std::getline(stream, field, '|'))
+        {
+            if (column == 5)
+            {
+                sellerId = std::atoi(field.c_str());
+                parsed = true;
+                break;
+            }
+            ++column;
+        }
+
+        if (parsed && sellerId == id)
         {
             fclose(file);
             return true;
@@ -134,21 +164,20 @@ void Seller::readSellersFromFile()
         return;
     }
 
-    cout << "\n"
-         << left
-         << setw(8) << "ID"
-         << setw(24) << "Name"
-         << setw(20) << "Contact"
-         << setw(30) << "Address" << "\n";
-    cout << string(82, '-') << "\n";
-
+    bool found = false;
     while (readSellerRecord(file, seller))
     {
-        cout << left
-             << setw(8) << seller.id
-             << setw(24) << seller.name
-             << setw(20) << seller.contact
-             << setw(30) << seller.address << "\n";
+        if (seller.id == 0)
+        {
+            continue;
+        }
+        found = true;
+        printSeller(seller);
+    }
+
+    if (!found)
+    {
+        cout << "No seller records found.\n";
     }
 
     fclose(file);
@@ -169,13 +198,13 @@ void Seller::addSeller()
     }
 
     cout << "Seller ID: " << newSeller.id << "\n";
-    cout << "Enter Seller Name: ";
-    cin >> ws;
-    cin.getline(newSeller.name, sizeof(newSeller.name));
-    cout << "Enter Contact: ";
-    cin.getline(newSeller.contact, sizeof(newSeller.contact));
-    cout << "Enter Address: ";
-    cin.getline(newSeller.address, sizeof(newSeller.address));
+
+    Input::copyTo(newSeller.name, sizeof(newSeller.name),
+                  Input::readString("Enter Seller Name: "));
+    Input::copyTo(newSeller.contact, sizeof(newSeller.contact),
+                  Input::readString("Enter Contact: "));
+    Input::copyTo(newSeller.address, sizeof(newSeller.address),
+                  Input::readString("Enter Address: "));
 
     FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::APPEND));
     if (!file)
@@ -219,7 +248,7 @@ void Seller::deleteSellerById(int id)
     if (sellerHasProperties(id))
     {
         cout << "Seller is linked to one or more properties and cannot be deleted.\n";
-        waitForEnter();
+        Input::waitForEnter();
         return;
     }
 
@@ -245,6 +274,10 @@ void Seller::deleteSellerById(int id)
 
     while (readSellerRecord(original, seller))
     {
+        if (seller.id == 0)
+        {
+            continue;
+        }
         if (seller.id == id)
         {
             found = true;
@@ -261,7 +294,7 @@ void Seller::deleteSellerById(int id)
     rename("temp.txt", this->fileName);
 
     cout << (found ? "Seller deleted successfully!\n" : "Seller ID not found!\n");
-    waitForEnter();
+    Input::waitForEnter();
 }
 
 void Seller::updateSellerById(int id)
@@ -288,16 +321,28 @@ void Seller::updateSellerById(int id)
 
     while (readSellerRecord(original, seller))
     {
+        if (seller.id == 0)
+        {
+            continue;
+        }
         if (seller.id == id)
         {
             found = true;
-            cout << "Enter New Name (Current: " << seller.name << "): ";
-            cin >> ws;
-            cin.getline(seller.name, sizeof(seller.name));
-            cout << "Enter New Contact (Current: " << seller.contact << "): ";
-            cin.getline(seller.contact, sizeof(seller.contact));
-            cout << "Enter New Address (Current: " << seller.address << "): ";
-            cin.getline(seller.address, sizeof(seller.address));
+
+            const std::string name = Input::readString(
+                std::string("Enter New Name (Current: ") + seller.name + "): ",
+                seller.name);
+            Input::copyTo(seller.name, sizeof(seller.name), name);
+
+            const std::string contact = Input::readString(
+                std::string("Enter New Contact (Current: ") + seller.contact + "): ",
+                seller.contact);
+            Input::copyTo(seller.contact, sizeof(seller.contact), contact);
+
+            const std::string address = Input::readString(
+                std::string("Enter New Address (Current: ") + seller.address + "): ",
+                seller.address);
+            Input::copyTo(seller.address, sizeof(seller.address), address);
         }
 
         writeSellerRecord(temp, seller);
@@ -310,7 +355,7 @@ void Seller::updateSellerById(int id)
     rename("temp.txt", this->fileName);
 
     cout << (found ? "Seller updated successfully!\n" : "Seller ID not found!\n");
-    waitForEnter();
+    Input::waitForEnter();
 }
 
 void Seller::viewSellers()
@@ -326,27 +371,22 @@ void Seller::viewSellers()
         cout << "\n1. Delete Seller by ID\n";
         cout << "2. Update Seller by ID\n";
         cout << "3. Back\n";
-        cout << "Enter choice: ";
-        cin >> choice;
+        choice = Input::readChoice("Enter choice: ");
 
         if (choice == 1)
         {
-            int id = 0;
-            cout << "Enter Seller ID to delete: ";
-            cin >> id;
+            const int id = Input::readInt("Enter Seller ID to delete: ");
             deleteSellerById(id);
         }
         else if (choice == 2)
         {
-            int id = 0;
-            cout << "Enter Seller ID to update: ";
-            cin >> id;
+            const int id = Input::readInt("Enter Seller ID to update: ");
             updateSellerById(id);
         }
         else if (choice != 3)
         {
             cout << "Invalid choice!\n";
-            waitForEnter();
+            Input::waitForEnter();
         }
     } while (choice != 3);
 }
@@ -363,13 +403,12 @@ void Seller::menu()
         cout << "1. Add Seller\n";
         cout << "2. View Sellers\n";
         cout << "3. Back to Main Menu\n";
-        cout << "Enter choice: ";
-        cin >> choice;
+        choice = Input::readChoice("Enter choice: ");
 
         if (choice == 1)
         {
             addSeller();
-            waitForEnter();
+            Input::waitForEnter();
         }
         else if (choice == 2)
         {
@@ -378,7 +417,7 @@ void Seller::menu()
         else if (choice != 3)
         {
             cout << "Invalid choice.\n";
-            waitForEnter();
+            Input::waitForEnter();
         }
     } while (choice != 3);
 }
