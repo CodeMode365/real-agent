@@ -485,8 +485,8 @@ void Client::viewClients()
 
         cout << "\n1. Delete Client by ID\n";
         cout << "2. Update Client\n";
-        cout << "3. Update Client Requirements\n";
-        cout << "4. Back\n";
+        // cout << "3. Update Client Requirements\n";
+        cout << "3. Back\n";
         choice = Input::readChoice("Enter choice: ");
 
         if (choice == 1)
@@ -499,17 +499,17 @@ void Client::viewClients()
             const int id = Input::readInt("Enter Client ID to update: ");
             updateClientById(id);
         }
-        else if (choice == 3)
-        {
-            const int id = Input::readInt("Enter Client ID to update requirements: ");
-            updateClientRequirements(id);
-        }
-        else if (choice != 4)
+        // else if (choice == 3)
+        // {
+        //     const int id = Input::readInt("Enter Client ID to update requirements: ");
+        //     updateClientRequirements(id);
+        // }
+        else if (choice != 3)
         {
             cout << "Invalid choice!\n";
             Input::waitForEnter();
         }
-    } while (choice != 4);
+    } while (choice != 3);
 }
 
 void Client::enterDetails()

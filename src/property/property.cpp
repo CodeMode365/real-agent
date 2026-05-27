@@ -487,8 +487,8 @@ void Property::menu()
         Screen::printHeader("Property Menu");
         cout << "1. Add Property\n";
         cout << "2. View Properties\n";
-        cout << "3. Search by Client Requirements\n";
-        cout << "4. Back to Main Menu\n";
+        // cout << "3. Search by Client Requirements\n";
+        cout << "3. Back to Main Menu\n";
         choice = Input::readChoice("Enter choice: ");
 
         if (choice == 1)
@@ -500,14 +500,14 @@ void Property::menu()
         {
             viewProperties();
         }
-        else if (choice == 3)
-        {
-            searchPropertyByRequirements();
-        }
-        else if (choice != 4)
+        // else if (choice == 3)
+        // {
+        //     searchPropertyByRequirements();
+        // }
+        else if (choice != 3)
         {
             cout << "Invalid choice. Please try again.\n";
             Input::waitForEnter();
         }
-    } while (choice != 4);
+    } while (choice != 3);
 }
