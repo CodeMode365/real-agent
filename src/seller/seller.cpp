@@ -13,23 +13,24 @@ using namespace std;
 
 namespace
 {
-    bool parseSellerRecord(const char *line, SellerDetails &seller)
+    bool parseSellerRecord(const char *line, SellerDetails &seller) // Parses a line of text into a SellerDetails struct. Returns true if parsing was successful.
     {
-        std::stringstream stream(line);
-        std::string id;
-        std::string name;
-        std::string contact;
-        std::string address;
+        stringstream stream(line);
+        string id;
+        string name;
+        string contact;
+        string address;
 
-        if (!std::getline(stream, id, '|') ||
-            !std::getline(stream, name, '|') ||
-            !std::getline(stream, contact, '|') ||
-            !std::getline(stream, address))
+        // Attempt to read the expected fields from the line, using '|' as a delimiter. If any field is missing, return false.
+        if (!getline(stream, id, '|') ||
+            !getline(stream, name, '|') ||
+            !getline(stream, contact, '|') ||
+            !getline(stream, address))
         {
             return false;
         }
 
-        seller.id = std::atoi(id.c_str());
+        seller.id = atoi(id.c_str()); // Convert the ID from string to integer and store it in the seller struct.
         Input::copyTo(seller.name, sizeof(seller.name), name);
         Input::copyTo(seller.contact, sizeof(seller.contact), contact);
         Input::copyTo(seller.address, sizeof(seller.address), address);
@@ -68,7 +69,7 @@ namespace
     void printSeller(const SellerDetails &seller)
     {
         Screen::beginRecord();
-        Screen::printKeyValue("ID", std::to_string(seller.id));
+        Screen::printKeyValue("ID", to_string(seller.id));
         Screen::printKeyValue("Name", seller.name);
         Screen::printKeyValue("Contact", seller.contact);
         Screen::printKeyValue("Address", seller.address);
@@ -125,17 +126,17 @@ bool Seller::sellerHasProperties(int id)
             continue;
         }
 
-        std::stringstream stream(line);
-        std::string field;
+        stringstream stream(line);
+        string field;
         int column = 0;
         int sellerId = 0;
         bool parsed = false;
 
-        while (std::getline(stream, field, '|'))
+        while (getline(stream, field, '|'))
         {
             if (column == 5)
             {
-                sellerId = std::atoi(field.c_str());
+                sellerId = atoi(field.c_str());
                 parsed = true;
                 break;
             }
@@ -329,18 +330,18 @@ void Seller::updateSellerById(int id)
         {
             found = true;
 
-            const std::string name = Input::readString(
-                std::string("Enter New Name (Current: ") + seller.name + "): ",
+            const string name = Input::readString(
+                string("Enter New Name (Current: ") + seller.name + "): ",
                 seller.name);
             Input::copyTo(seller.name, sizeof(seller.name), name);
 
-            const std::string contact = Input::readString(
-                std::string("Enter New Contact (Current: ") + seller.contact + "): ",
+            const string contact = Input::readString(
+                string("Enter New Contact (Current: ") + seller.contact + "): ",
                 seller.contact);
             Input::copyTo(seller.contact, sizeof(seller.contact), contact);
 
-            const std::string address = Input::readString(
-                std::string("Enter New Address (Current: ") + seller.address + "): ",
+            const string address = Input::readString(
+                string("Enter New Address (Current: ") + seller.address + "): ",
                 seller.address);
             Input::copyTo(seller.address, sizeof(seller.address), address);
         }

@@ -6,6 +6,8 @@
 #include <limits>
 #include <unistd.h>
 
+using namespace std;
+
 namespace Screen
 {
     namespace

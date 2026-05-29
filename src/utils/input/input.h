@@ -1,23 +1,28 @@
 #pragma once
 #include <string>
 
+using namespace std;
+
 namespace Input
 {
-    const std::string NA = "N/A";
+    const string NA = "N/A";
 
-    std::string trim(const std::string &s);
-    std::string sanitize(const std::string &s);
+    string trim(const string &s);
+    string sanitize(const string &s);
 
-    std::string readString(const std::string &prompt,
-                           const std::string &defaultValue = NA);
+    string readString(const string &prompt,
+                      const string &defaultValue = NA);
 
-    int readInt(const std::string &prompt, int defaultValue = 0);
+    string readPassword(const string &prompt,
+                        const string &defaultValue = NA);
 
-    float readFloat(const std::string &prompt, float defaultValue = 0.0f);
+    int readInt(const string &prompt, int defaultValue = 0);
 
-    int readChoice(const std::string &prompt);
+    float readFloat(const string &prompt, float defaultValue = 0.0f);
+
+    int readChoice(const string &prompt);
 
     void waitForEnter();
 
-    void copyTo(char *dest, std::size_t destSize, const std::string &src);
+    void copyTo(char *dest, size_t destSize, const string &src);
 }

@@ -16,6 +16,6 @@ bool Admin::login()
 {
     cout << "\n--- Admin Login ---\n";
     const string u = Input::readString("Username: ", "");
-    const string p = Input::readString("Password: ", "");
+    const string p = Input::readPassword("Password: ", "");
     return u == username && p == password;
 }
