@@ -32,11 +32,12 @@ namespace Screen
 
     void printHeader(const string &title)
     {
+        // draw the title centered inside a box, at least 40 chars wide
         int totalWidth = max(40, (int)title.length() + 4);
         int contentWidth = totalWidth - 2;
         int padding = contentWidth - (int)title.length();
         int leftPad = padding / 2;
-        int rightPad = padding - leftPad;
+        int rightPad = padding - leftPad; // give the extra space to the right side
 
         cout << "+" << string(contentWidth, '=') << "+\n";
         cout << "|" << string(leftPad, ' ') << title

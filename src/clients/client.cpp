@@ -11,6 +11,7 @@
 
 using namespace std;
 
+// a client line has 11 fields split by |, read them into the array first then convert
 bool parseClientRecord(const char *line, ClientDetails &client)
 {
     stringstream stream(line);
@@ -18,7 +19,7 @@ bool parseClientRecord(const char *line, ClientDetails &client)
 
     for (int i = 0; i < 11; ++i)
     {
-        char delim = (i == 10) ? '\n' : '|';
+        char delim = (i == 10) ? '\n' : '|'; // last field has no | after it
         if (!getline(stream, fields[i], delim))
         {
             return false;

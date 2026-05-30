@@ -10,6 +10,7 @@
 
 using namespace std;
 
+// turn one "id|name|contact|address" line back into a seller
 bool parseSellerRecord(const char *line, SellerDetails &seller)
 {
     stringstream stream(line);
@@ -101,6 +102,8 @@ int Seller::generateId()
     return id;
 }
 
+// don't allow deleting a seller that still owns properties.
+// in a property line the seller id is field number 5 (counting from 0)
 bool Seller::sellerHasProperties(int id)
 {
     FILE *file = fopen("properties.txt", "r");
@@ -126,7 +129,7 @@ bool Seller::sellerHasProperties(int id)
 
         while (getline(stream, field, '|'))
         {
-            if (column == 5)
+            if (column == 5) // reached the seller id column
             {
                 sellerId = atoi(field.c_str());
                 parsed = true;

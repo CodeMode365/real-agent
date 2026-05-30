@@ -54,6 +54,8 @@ namespace Input
         return line.empty() ? defaultValue : line;
     }
 
+    // reads a password without showing it - prints a * for each key instead.
+    // this only works on a real terminal, so if input is piped (tests) just read a line.
     string readPassword(const string &prompt, const string &defaultValue)
     {
         cout << prompt;
@@ -72,7 +74,7 @@ namespace Input
             return line.empty() ? defaultValue : line;
         }
         termios newTerm = oldTerm;
-        newTerm.c_lflag &= ~(ECHO | ICANON);
+        newTerm.c_lflag &= ~(ECHO | ICANON); // turn off echo + line mode so we get keys one at a time
         newTerm.c_cc[VMIN] = 1;
         newTerm.c_cc[VTIME] = 0;
         tcsetattr(STDIN_FILENO, TCSANOW, &newTerm);
@@ -90,7 +92,7 @@ namespace Input
                 if (!buffer.empty())
                 {
                     buffer.pop_back();
-                    cout << "\b \b";
+                    cout << "\b \b"; // wipe the last * off the screen
                     cout.flush();
                 }
                 continue;
@@ -129,6 +131,7 @@ namespace Input
         {
             size_t pos = 0;
             int value = stoi(line, &pos);
+            // pos must reach the end, otherwise stuff like "12abc" would sneak through
             return pos == line.size() ? value : defaultValue;
         }
         catch (...)

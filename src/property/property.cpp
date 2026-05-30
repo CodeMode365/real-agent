@@ -12,6 +12,7 @@
 
 using namespace std;
 
+// breaks one "id|type|location|price|size|sellerId|status" line into the struct
 bool parsePropertyRecord(const char *line, PropertyDetails &property)
 {
     stringstream stream(line);
@@ -47,10 +48,11 @@ bool readPropertyRecord(FILE *file, PropertyDetails &property)
         return false;
     }
 
-    line[strcspn(line, "\r\n")] = '\0';
+    line[strcspn(line, "\r\n")] = '\0'; // chop the newline off
 
     if (line[0] == '\0')
     {
+        // blank line - hand back an empty record (id 0) but keep reading
         property = {};
         return true;
     }
@@ -94,6 +96,7 @@ Property::Property()
     strcpy(this->fileName, "properties.txt");
 }
 
+// reads the last used id from propertyID.txt, adds one and saves it back
 int Property::generateId()
 {
     int id = 0;
@@ -229,6 +232,8 @@ void Property::addProperty()
     cout << "Property added successfully!\n";
 }
 
+// can't remove a single line from a text file, so copy everything except the
+// matching record into temp.txt and then swap it in for the original
 void Property::deletePropertyById(int id)
 {
     FILE *file = fopen(this->fileName, "r");
@@ -423,6 +428,7 @@ void Property::searchPropertyByRequirements()
         }
         bool matches = strcmp(property.status, "Available") == 0;
 
+        // a client uses 0 or N/A to mean "any", so we only filter on the fields they actually set
         bool anyLocation = strcmp(client.location, "0") == 0 ||
                            strcmp(client.location, Input::NA.c_str()) == 0;
         if (matches && !anyLocation && strcmp(client.location, property.location) != 0)
