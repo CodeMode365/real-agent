@@ -5,7 +5,6 @@
 
 using namespace std;
 
-// ================= MAIN FUNCTION =================
 int main()
 {
   Screen::clearScreen();

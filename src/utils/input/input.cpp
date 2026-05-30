@@ -1,5 +1,4 @@
 #include "input.h"
-#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -15,12 +14,12 @@ namespace Input
     string trim(const string &s)
     {
         const char *whitespace = " \t\r\n\v\f";
-        const auto start = s.find_first_not_of(whitespace); // Find the index of the first non-whitespace character. If the string is all whitespace, return an empty string.
+        size_t start = s.find_first_not_of(whitespace);
         if (start == string::npos)
         {
             return "";
         }
-        const auto end = s.find_last_not_of(whitespace);
+        size_t end = s.find_last_not_of(whitespace);
         return s.substr(start, end - start + 1);
     }
 
@@ -129,7 +128,7 @@ namespace Input
         try
         {
             size_t pos = 0;
-            const int value = stoi(line, &pos);
+            int value = stoi(line, &pos);
             return pos == line.size() ? value : defaultValue;
         }
         catch (...)
@@ -149,7 +148,7 @@ namespace Input
         try
         {
             size_t pos = 0;
-            const float value = stof(line, &pos);
+            float value = stof(line, &pos);
             return pos == line.size() ? value : defaultValue;
         }
         catch (...)
@@ -172,12 +171,7 @@ namespace Input
 
     void copyTo(char *dest, size_t destSize, const string &src)
     {
-        if (dest == nullptr || destSize == 0)
-        {
-            return;
-        }
-        const size_t copyLen = min(src.size(), destSize - 1);
-        memcpy(dest, src.data(), copyLen);
-        dest[copyLen] = '\0';
+        strncpy(dest, src.c_str(), destSize - 1);
+        dest[destSize - 1] = '\0';
     }
 }

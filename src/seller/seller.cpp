@@ -5,76 +5,68 @@
 #include <string>
 #include "seller.h"
 #include "../menu/menu.h"
-#include "../utils/files/file.h"
 #include "../utils/input/input.h"
 #include "../utils/screen/screen.h"
 
 using namespace std;
 
-namespace
+bool parseSellerRecord(const char *line, SellerDetails &seller)
 {
-    bool parseSellerRecord(const char *line, SellerDetails &seller) // Parses a line of text into a SellerDetails struct. Returns true if parsing was successful.
+    stringstream stream(line);
+    string id, name, contact, address;
+
+    if (!getline(stream, id, '|') ||
+        !getline(stream, name, '|') ||
+        !getline(stream, contact, '|') ||
+        !getline(stream, address))
     {
-        stringstream stream(line);
-        string id;
-        string name;
-        string contact;
-        string address;
-
-        // Attempt to read the expected fields from the line, using '|' as a delimiter. If any field is missing, return false.
-        if (!getline(stream, id, '|') ||
-            !getline(stream, name, '|') ||
-            !getline(stream, contact, '|') ||
-            !getline(stream, address))
-        {
-            return false;
-        }
-
-        seller.id = atoi(id.c_str()); // Convert the ID from string to integer and store it in the seller struct.
-        Input::copyTo(seller.name, sizeof(seller.name), name);
-        Input::copyTo(seller.contact, sizeof(seller.contact), contact);
-        Input::copyTo(seller.address, sizeof(seller.address), address);
-
-        return seller.id > 0;
+        return false;
     }
 
-    bool readSellerRecord(FILE *file, SellerDetails &seller)
+    seller.id = atoi(id.c_str());
+    Input::copyTo(seller.name, sizeof(seller.name), name);
+    Input::copyTo(seller.contact, sizeof(seller.contact), contact);
+    Input::copyTo(seller.address, sizeof(seller.address), address);
+
+    return seller.id > 0;
+}
+
+bool readSellerRecord(FILE *file, SellerDetails &seller)
+{
+    char line[512] = {};
+    if (!fgets(line, sizeof(line), file))
     {
-        char line[512] = {};
-        if (!fgets(line, sizeof(line), file))
-        {
-            return false;
-        }
-
-        line[strcspn(line, "\r\n")] = '\0';
-
-        if (line[0] == '\0')
-        {
-            seller = {};
-            return true;
-        }
-
-        return parseSellerRecord(line, seller);
+        return false;
     }
 
-    void writeSellerRecord(FILE *file, const SellerDetails &seller)
+    line[strcspn(line, "\r\n")] = '\0';
+
+    if (line[0] == '\0')
     {
-        fprintf(file, "%d|%s|%s|%s\n",
-                seller.id,
-                seller.name,
-                seller.contact,
-                seller.address);
+        seller = {};
+        return true;
     }
 
-    void printSeller(const SellerDetails &seller)
-    {
-        Screen::beginRecord();
-        Screen::printKeyValue("ID", to_string(seller.id));
-        Screen::printKeyValue("Name", seller.name);
-        Screen::printKeyValue("Contact", seller.contact);
-        Screen::printKeyValue("Address", seller.address);
-        Screen::endRecord();
-    }
+    return parseSellerRecord(line, seller);
+}
+
+void writeSellerRecord(FILE *file, const SellerDetails &seller)
+{
+    fprintf(file, "%d|%s|%s|%s\n",
+            seller.id,
+            seller.name,
+            seller.contact,
+            seller.address);
+}
+
+void printSeller(const SellerDetails &seller)
+{
+    Screen::beginRecord();
+    Screen::printKeyValue("ID", to_string(seller.id));
+    Screen::printKeyValue("Name", seller.name);
+    Screen::printKeyValue("Contact", seller.contact);
+    Screen::printKeyValue("Address", seller.address);
+    Screen::endRecord();
 }
 
 Seller::Seller()
@@ -85,7 +77,7 @@ Seller::Seller()
 int Seller::generateId()
 {
     int id = 0;
-    FILE *file = fopen("sellerID.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    FILE *file = fopen("sellerID.txt", "r");
 
     if (file)
     {
@@ -98,7 +90,7 @@ int Seller::generateId()
 
     ++id;
 
-    file = fopen("sellerID.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
+    file = fopen("sellerID.txt", "w");
     if (!file)
     {
         return -1;
@@ -111,7 +103,7 @@ int Seller::generateId()
 
 bool Seller::sellerHasProperties(int id)
 {
-    FILE *file = fopen("properties.txt", FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    FILE *file = fopen("properties.txt", "r");
     if (!file)
     {
         return false;
@@ -157,7 +149,7 @@ bool Seller::sellerHasProperties(int id)
 void Seller::readSellersFromFile()
 {
     SellerDetails seller = {};
-    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    FILE *file = fopen(this->fileName, "r");
 
     if (!file)
     {
@@ -207,7 +199,7 @@ void Seller::addSeller()
     Input::copyTo(newSeller.address, sizeof(newSeller.address),
                   Input::readString("Enter Address: "));
 
-    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::APPEND));
+    FILE *file = fopen(this->fileName, "a");
     if (!file)
     {
         cout << "Error opening file.\n";
@@ -223,7 +215,7 @@ void Seller::addSeller()
 SellerDetails Seller::getSellerById(int id)
 {
     SellerDetails seller = {};
-    FILE *file = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
+    FILE *file = fopen(this->fileName, "r");
 
     if (!file)
     {
@@ -253,8 +245,8 @@ void Seller::deleteSellerById(int id)
         return;
     }
 
-    FILE *original = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
-    FILE *temp = fopen("temp.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
+    FILE *original = fopen(this->fileName, "r");
+    FILE *temp = fopen("temp.txt", "w");
 
     SellerDetails seller = {};
     bool found = false;
@@ -300,8 +292,8 @@ void Seller::deleteSellerById(int id)
 
 void Seller::updateSellerById(int id)
 {
-    FILE *original = fopen(this->fileName, FileUtils::getFileModeString(FileUtils::FileMode::READ));
-    FILE *temp = fopen("temp.txt", FileUtils::getFileModeString(FileUtils::FileMode::WRITE));
+    FILE *original = fopen(this->fileName, "r");
+    FILE *temp = fopen("temp.txt", "w");
 
     SellerDetails seller = {};
     bool found = false;
@@ -330,17 +322,17 @@ void Seller::updateSellerById(int id)
         {
             found = true;
 
-            const string name = Input::readString(
+            string name = Input::readString(
                 string("Enter New Name (Current: ") + seller.name + "): ",
                 seller.name);
             Input::copyTo(seller.name, sizeof(seller.name), name);
 
-            const string contact = Input::readString(
+            string contact = Input::readString(
                 string("Enter New Contact (Current: ") + seller.contact + "): ",
                 seller.contact);
             Input::copyTo(seller.contact, sizeof(seller.contact), contact);
 
-            const string address = Input::readString(
+            string address = Input::readString(
                 string("Enter New Address (Current: ") + seller.address + "): ",
                 seller.address);
             Input::copyTo(seller.address, sizeof(seller.address), address);
@@ -376,12 +368,12 @@ void Seller::viewSellers()
 
         if (choice == 1)
         {
-            const int id = Input::readInt("Enter Seller ID to delete: ");
+            int id = Input::readInt("Enter Seller ID to delete: ");
             deleteSellerById(id);
         }
         else if (choice == 2)
         {
-            const int id = Input::readInt("Enter Seller ID to update: ");
+            int id = Input::readInt("Enter Seller ID to update: ");
             updateSellerById(id);
         }
         else if (choice != 3)
